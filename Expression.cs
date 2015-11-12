@@ -7,7 +7,7 @@ namespace AK
 	{
 		public Symbol root;
 		public Dictionary<string, Variable> constants = new Dictionary<string, Variable>();
-		
+
 		public Variable SetVariable(string name, double value)
 		{
 			Variable v;

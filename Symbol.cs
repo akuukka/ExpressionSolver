@@ -25,7 +25,7 @@ namespace AK
 		public double _value;
 		public Variable m_ptrToConstValue;
 		public SymbolList subExpression;
-		public int m_customFuncNameHash;
+		public CustomFunction customFunc;
 		
 		public bool IsImmutableConstant()
 		{
@@ -106,7 +106,7 @@ namespace AK
 			_value = o._value;
 			m_ptrToConstValue = o.m_ptrToConstValue;
 			subExpression = o.subExpression;
-			m_customFuncNameHash = o.m_customFuncNameHash;
+			customFunc = o.customFunc;
 		}
 		
 		public double value 
@@ -149,41 +149,41 @@ namespace AK
 			m_ptrToConstValue = ptrToConstValue;
 		}
 		
-		static Symbol createCustomFunctionSymbol(string funcName) {
-			Symbol s = new Symbol(SymbolType.FuncCustom);
-			s.m_customFuncNameHash = funcName.GetHashCode();
-			return s;
+		public Symbol(CustomFunction func)
+		{
+			type = SymbolType.FuncCustom;
+			customFunc = func;
 		}
 		
 		public override string ToString()
 		{
 			switch (type) {
-			case SymbolType.Value:
-				if (m_ptrToConstValue != null)
-				{
-					return m_ptrToConstValue.name;
-				}
-				return _value.ToString();
-			case SymbolType.OperatorAdd:
-				return "+";
-			case SymbolType.OperatorMultiply:
-				return "*";
-			case SymbolType.OperatorDivide:
-				return "/";
-			case SymbolType.FuncSin:
-				return "sin";
-			case SymbolType.FuncCos:
-				return "cos";
-			case SymbolType.FuncPow:
-				return "pow";
-			case SymbolType.FuncAbs:
-				return "abs";
-			case SymbolType.SubExpression:
-				return "("+subExpression.ToString()+")";
-			case SymbolType.Empty:
-				return "(null)";
-			case SymbolType.FuncCustom:
-				return "customfunc";
+				case SymbolType.Value:
+					if (m_ptrToConstValue != null)
+					{
+						return m_ptrToConstValue.name;
+					}
+					return _value.ToString();
+				case SymbolType.OperatorAdd:
+					return "+";
+				case SymbolType.OperatorMultiply:
+					return "*";
+				case SymbolType.OperatorDivide:
+					return "/";
+				case SymbolType.FuncSin:
+					return "sin";
+				case SymbolType.FuncCos:
+					return "cos";
+				case SymbolType.FuncPow:
+					return "pow";
+				case SymbolType.FuncAbs:
+					return "abs";
+				case SymbolType.SubExpression:
+					return "("+subExpression.ToString()+")";
+				case SymbolType.Empty:
+					return "(null)";
+				case SymbolType.FuncCustom:
+					return customFunc.name;
 			}
 			return "";
 		}

@@ -38,20 +38,17 @@ namespace AK
 					r+=(l.getSymbol(i+2));
 					i+=2;
 					break;
-				case SymbolType.FuncCustom:
-				{
-					/*var customFunc = m_env.getCustomFunctions().at(s.m_customFuncNameHash);
-					printf("%s(",customFunc.getName().c_str());
-					printSymbol(l.getSymbol(i+1));
-					if (customFunc.getParameterCount()>1) {
-						for (int j=1;j<customFunc.getParameterCount();j++) {
-							printf(",");
-							printSymbol(l.getSymbol(i+1+j));
+				case SymbolType.FuncCustom: {
+					r += s.customFunc.name + "(";
+					r+=(l.getSymbol(i+1));
+					if (s.customFunc.paramCount>1) {
+						for (int j=1;j<s.customFunc.paramCount;j++) {
+							r += ",";
+							r+=l.getSymbol(i+1+j);
 						}
 					}
-					printf(")");
-					i+= customFunc.getParameterCount();*/
-					r+="customfunc";
+					r += ")";
+					i+= s.customFunc.paramCount;
 				}
 					break;
 				case SymbolType.Value:

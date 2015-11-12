@@ -7,7 +7,47 @@ namespace AK
 
 	public static class SolverTools
 	{
-		public static int countParameters(string formula,int begin,int end) {
+		public struct IntPair
+		{
+			public int first;
+			public int second;
+			public IntPair(int first, int second)
+			{
+				this.first = first;
+				this.second = second;
+			}
+		}
+
+		public static List<IntPair> ParseParameters(string formula, int begin, int end) 
+		{
+			List<IntPair> r = new List<IntPair>();
+			
+			int currentParamBegin = -1;
+			int depth = 0;
+			
+			for (int i=begin;i<end;i++) {
+				if (formula[i] == '(') {
+					if (depth == 0) {
+						// First parameters
+						currentParamBegin = i+1;
+					}
+					depth++;
+				}
+				else if (formula[i] == ')') {
+					depth--;
+					if (depth == 0) {
+						r.Add (new IntPair(currentParamBegin,i));
+					}
+				}
+				else if (formula[i] == ',' && depth == 1) {
+					r.Add (new IntPair(currentParamBegin,i));
+					currentParamBegin = i+1;
+				}
+			}
+			return r;
+		}
+
+		public static int CountParameters(string formula,int begin,int end) {
 			int depth = 0;
 			int r = 1;
 			for (int i=begin;i<end;i++) {
@@ -48,13 +88,48 @@ namespace AK
 
 	public class ExpressionSolver
 	{
+		private struct IntPair
+		{
+			public int first;
+			public int second;
+		}
+
 		private static Dictionary<string,double> immutableGlobalConstants = new Dictionary<string, double>()
 		{
 			{"e",System.Math.E},
 			{"pi",System.Math.PI}
 		};
-
 		private Dictionary<string,Variable> globalConstants = new Dictionary<string, Variable>();
+		private Dictionary<string, CustomFunction> customFuncs = new Dictionary<string, CustomFunction>();
+
+		public ExpressionSolver()
+		{
+			AddCustomFunction("floor",1, delegate(double[] p) {
+				return System.Math.Floor(p[0]);
+			});
+
+			AddCustomFunction("ceil",1, delegate(double[] p) {
+				return System.Math.Ceiling(p[0]);
+			});
+
+			AddCustomFunction("min",2, delegate(double[] p) {
+				return System.Math.Min(p[0],p[1]);
+			});
+
+			AddCustomFunction("max",2, delegate(double[] p) {
+				return System.Math.Max(p[0],p[1]);
+			});
+		}
+
+		public void AddCustomFunction(string name, int paramCount, System.Func<double[],double> func)
+		{
+			customFuncs[name] = new CustomFunction(name, paramCount, func);
+		}
+
+		public void RemoveCustomFunction(string name)
+		{
+			customFuncs.Remove (name);
+		}
 
 		public Variable SetGlobalVariable(string name, double value)
 		{
@@ -82,8 +157,8 @@ namespace AK
 			return newExpression;
 		}
 
-		static double ParseSymbols(SymbolList syms, int threadId = 0) {
-			
+		static double ParseSymbols(SymbolList syms, int threadId = 0) 
+		{
 			bool transformNextValue = false;
 			double sum = 0;
 			double curTerm = 0;
@@ -95,82 +170,82 @@ namespace AK
 			
 			for (int i=0;i<len;i++) {
 				var s = symbolList[i];
-				
-				switch (s.type) {
-				case SymbolType.Value:
-				case SymbolType.SubExpression: {
-					double value = GetSymbolValue(s);
-					if (transformNextValue) {
-						var funcSymbol = symbolList[i-1];
-						switch (funcSymbol.type) {
-						case SymbolType.FuncSin:
-							value = System.Math.Sin(value);
-							break;
-						case SymbolType.FuncAbs:
-							value = System.Math.Abs(value);
-							break;
-						case SymbolType.FuncCos:
-							value = System.Math.Cos(value);
-							break;
-						case SymbolType.FuncPow:
+				switch (s.type)
+				{
+					case SymbolType.Value:
+					case SymbolType.SubExpression:
+					{
+						double value = GetSymbolValue(s);
+						if (transformNextValue) 
 						{
-							var rhs = GetSymbolValue(symbolList[i+1]);
-							value = System.Math.Pow(value,rhs);
-							i++;
-						}
-							break;
-						case SymbolType.FuncCustom:
+							var funcSymbol = symbolList[i-1];
+							switch (funcSymbol.type) {
+							case SymbolType.FuncSin:
+								value = System.Math.Sin(value);
+								break;
+							case SymbolType.FuncAbs:
+								value = System.Math.Abs(value);
+								break;
+							case SymbolType.FuncCos:
+								value = System.Math.Cos(value);
+								break;
+							case SymbolType.FuncPow:
 							{
-								/*var customFunc = m_env.getCustomFunctions().at(funcSymbol.m_customFuncNameHash);
-								if (customFunc.getParameterCount()==1) {
-									value = customFunc.getValue(value);
-								}
-								else if (customFunc.getParameterCount()==2) {
-									var param2 = getSymbolValue(symbolList[i+1],threadId);
-									value = customFunc.getValue(value,param2);
-									i++;
-									break;
-								}*/
-								throw new System.NotImplementedException();
+								var rhs = GetSymbolValue(symbolList[i+1]);
+								value = System.Math.Pow(value,rhs);
+								i++;
 							}
+								break;
+							case SymbolType.FuncCustom:
+							{
+								var customFunc = funcSymbol.customFunc;
+								double[] p = new double[4];
+								p[0] = value;
+								for (int g=1;g<customFunc.paramCount;g++)
+								{
+									p[g] = GetSymbolValue(symbolList[i+1]);
+									i++;
+								}
+								value = customFunc.func(p);
+								break;
+							}
+							default:
+								break;
+							}
+							transformNextValue = false;
+						}
+						
+						switch (prevOper) {
+						case SymbolType.OperatorMultiply:
+							curTerm *= value;
+							break;
+						case SymbolType.OperatorDivide:
+							curTerm /= value;
+							break;
+						case SymbolType.OperatorAdd:
+							sum += curTerm;
+							curTerm = value;
 							break;
 						default:
-							break;
+							throw new System.Exception("Unable to parse symbols.");
 						}
-						transformNextValue = false;
+						prevOper = SymbolType.OperatorMultiply;
+						break;
 					}
-					
-					switch (prevOper) {
-					case SymbolType.OperatorMultiply:
-						curTerm *= value;
-						break;
 					case SymbolType.OperatorDivide:
-						curTerm /= value;
-						break;
+						
 					case SymbolType.OperatorAdd:
-						sum += curTerm;
-						curTerm = value;
+						prevOper = s.type;
+						break;
+					case SymbolType.FuncCos:
+					case SymbolType.FuncSin:
+					case SymbolType.FuncAbs:
+					case SymbolType.FuncPow:
+					case SymbolType.FuncCustom:
+						transformNextValue = true;
 						break;
 					default:
 						throw new System.Exception("Unable to parse symbols.");
-					}
-					prevOper = SymbolType.OperatorMultiply;
-					break;
-				}
-				case SymbolType.OperatorDivide:
-					
-				case SymbolType.OperatorAdd:
-					prevOper = s.type;
-					break;
-				case SymbolType.FuncCos:
-				case SymbolType.FuncSin:
-				case SymbolType.FuncAbs:
-				case SymbolType.FuncPow:
-				case SymbolType.FuncCustom:
-					transformNextValue = true;
-					break;
-				default:
-					throw new System.Exception("Unable to parse symbols.");
 				}
 			}
 			// Remember to add the final term to sum
@@ -271,65 +346,60 @@ namespace AK
 				}
 				Symbol s = parseBuiltInFunction(formula,begin,i);
 				switch (s.type) {
-				case SymbolType.FuncCos:
-				case SymbolType.FuncAbs:
-				case SymbolType.FuncSin: {
-					Symbol argument = Symbolicate(formula,i+1,end-1,exp);
-					var newSubExpression = new SymbolList();
-					newSubExpression.Append(new Symbol(s.type));
-					newSubExpression.Append(argument);
-					Symbol newSymbol = new Symbol(SymbolType.SubExpression);
-					newSymbol.subExpression = newSubExpression;
-					return newSymbol;
-				}
-				default:
-				{
-					// Get hash value for the value name
-					throw new System.NotImplementedException();
-					/*
-					int hash = stringHash(formula,begin,i);
-					auto globalFuncs = m_env.getCustomFunctions();
-					auto it = globalFuncs.find(hash);
-					if (it != globalFuncs.end()) {
-						var func = it->second;
-						int requiredParameterCount = func.getParameterCount();
-						int foundParameterCount = countParameters(formula,i,end);
-						if (requiredParameterCount == foundParameterCount) {
-							if (requiredParameterCount == 1) {
-								Symbol argument = symbolicate(formula,i+1,end-1,parentExpression);
-								SymbolList<T>* newSubExpression = parentExpression.initSymbolList();
-								newSubExpression.Append(Symbol.createCustomFunctionSymbol(func.getName()));
-								newSubExpression.Append(argument);
-								Symbol newSymbol = new Symbol(SymbolType.SubExpression);
-								newSymbol.m_ptrToSubExpression = newSubExpression;
-								return newSymbol;
+					case SymbolType.FuncCos:
+					case SymbolType.FuncAbs:
+					case SymbolType.FuncSin: {
+						Symbol argument = Symbolicate(formula,i+1,end-1,exp);
+						var newSubExpression = new SymbolList();
+						newSubExpression.Append(new Symbol(s.type));
+						newSubExpression.Append(argument);
+						Symbol newSymbol = new Symbol(SymbolType.SubExpression);
+						newSymbol.subExpression = newSubExpression;
+						return newSymbol;
+					}
+					default:
+					{
+						string funcName = formula.Substring(begin,i-begin);
+						CustomFunction customFunc;
+						if (customFuncs.TryGetValue(funcName,out customFunc))
+						{
+							int requiredParameterCount = customFunc.paramCount;
+							int foundParameterCount = SolverTools.CountParameters(formula,begin,end);
+							if (requiredParameterCount == foundParameterCount) {
+								if (requiredParameterCount == 1) {
+									Symbol argument = Symbolicate(formula,i+1,end-1,exp);
+									SymbolList newSubExpression = new SymbolList();
+									newSubExpression.Append(new Symbol(customFunc));
+									newSubExpression.Append(argument);
+									Symbol newSymbol = new Symbol(SymbolType.SubExpression);
+									newSymbol.subExpression = newSubExpression;
+									return newSymbol;
+								}
+								else {
+									List<SolverTools.IntPair> parameters = SolverTools.ParseParameters(formula,i,end);
+									SymbolList newSubExpression = new SymbolList();
+									newSubExpression.Append(new Symbol(customFunc));
+									for (int k=0;k<requiredParameterCount;k++) {
+										Symbol p = Symbolicate(formula,parameters[k].first,parameters[k].second,exp);
+										newSubExpression.Append(p);
+									}
+									
+									Symbol newSymbol = new Symbol(SymbolType.SubExpression);
+									newSymbol.subExpression = newSubExpression;
+									return newSymbol;
+									
+								}
 							}
 							else {
-								std::vector<std::pair<int32,int32> > parameters = parseParameters(formula,i,end);
-								assert(parameters.size() == (size_t)requiredParameterCount);
-								
-								SymbolList<T>* newSubExpression = parentExpression.initSymbolList();
-								newSubExpression->append(Symbol::createCustomFunctionSymbol(func.getName()));
-								for (int32 i=0;i<requiredParameterCount;i++) {
-									Symbol p = symbolicate(formula,parameters[i].first,parameters[i].second,parentExpression);
-									newSubExpression->append(p);
-								}
-								
-								Symbol newSymbol(SymbolType::SubExpression);
-								newSymbol.m_ptrToSubExpression = newSubExpression;
-								return newSymbol;
-								
+								string errorMessage = "Function " + customFunc.name + " requires " + requiredParameterCount + " parameters, " + foundParameterCount + " found.";
+								throw new System.Exception(errorMessage);
 							}
 						}
-						else {
-							std::string errorMessage = "Function " + func.getName() + " requires " + std::to_string(requiredParameterCount) + std::string(" parameters, ") + std::to_string(foundParameterCount) + std::string(" found.");
-							throw FunctionParameterException(errorMessage);
+						else
+						{
+							throw new System.Exception("Function " + funcName + " not recognized");
 						}
 					}
-					*/
-				}
-					throw new System.Exception("Unknown expression: " + formula.Substring(begin,i-begin));
-					break;
 				}
 			}
 			
