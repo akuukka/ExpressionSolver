@@ -118,6 +118,17 @@ namespace AK
 					newExpression.SetVariable(localVariableName.Trim(),0.0);
 				}
 			}
+			// Remove white space
+			formula = formula.Replace(" ",string.Empty).Replace("\n",string.Empty).Replace("\t",string.Empty).Replace("\r",string.Empty);
+			// Check validity
+			try {
+				ValidityChecker.CheckValidity(formula);
+			}
+			catch (System.Exception ex)
+			{
+				throw ex;
+			}
+
 			Symbol s = Symbolicate(formula, 0, formula.Length,newExpression);
 			newExpression.root = s;
 			return newExpression;
@@ -246,39 +257,38 @@ namespace AK
 			return new Symbol(SymbolType.Empty);
 		}
 
-		Symbol SymbolicateValue(string formula, int begin, int end, Expression exp) {
-
-			
+		Symbol SymbolicateValue(string formula, int begin, int end, Expression exp)
+		{
 			if (formula[begin] == '+')
 				begin++;
-			
-			// Check if the value contains power operator. If yes, return the return symbol is symbollist of type pow(left,right) where left and right are symbols we get by recursively calling this
-			// function for the parts of formula left and rigth from the pow operaotr
-			// But take parenthesis into account so that power operators inside function arguments do not cause trouble
 			int depth=0;
-			for (int k = begin; k < end; k++) {
+			for (int k = begin; k < end; k++)
+			{
 				if (formula[k]=='(')
 					depth++;
 				else if (formula[k]==')')
 					depth--;
-				else if (depth == 0 && formula[k] == '^') {
+				else if (depth == 0 && formula[k] == '^')
+				{
 					// Check for small integer powers: they will be done using multiplication instead!
-					
 					Symbol lhs = Symbolicate(formula,begin,k,exp);
 					Symbol rhs = Symbolicate(formula,k+1,end,exp);
 					var newSubExpression = new SymbolList();
-					if (end-k-1 == 1 && lhs.type == SymbolType.Value && formula.Substring(k+1,end-k-1)=="2") {
+					if (end-k-1 == 1 && lhs.type == SymbolType.Value && formula.Substring(k+1,end-k-1)=="2") 
+					{
 						// Second power found
 						newSubExpression.Append(lhs);
 						newSubExpression.Append(lhs);
 					}
-					else if (end-k-1 == 1 && lhs.type == SymbolType.Value && formula.Substring(k+1,end-k-1)=="3") {
+					else if (end-k-1 == 1 && lhs.type == SymbolType.Value && formula.Substring(k+1,end-k-1)=="3")
+					{
 						// Second power found
 						newSubExpression.Append(lhs);
 						newSubExpression.Append(lhs);
 						newSubExpression.Append(lhs);
 					}
-					else {
+					else
+					{
 						newSubExpression.Append(new Symbol(SymbolType.FuncPow));
 						newSubExpression.Append(lhs);
 						newSubExpression.Append(rhs);
@@ -289,15 +299,16 @@ namespace AK
 				}
 			}
 			
-			if (formula[begin] == '(' && formula[end - 1] == ')') {
+			if (formula[begin] == '(' && formula[end - 1] == ')')
+			{
 				var s = Symbolicate(formula, begin + 1, end - 1,exp);
 				s.Simplify();
 				return s;
 			}
-			
 
 			double valueAsRealNumber;
-			if (double.TryParse(formula.Substring(begin,end-begin),out valueAsRealNumber)) {
+			if (double.TryParse(formula.Substring(begin,end-begin),out valueAsRealNumber))
+			{
 				return new Symbol(valueAsRealNumber);
 			}
 			
