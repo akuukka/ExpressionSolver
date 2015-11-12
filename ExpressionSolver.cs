@@ -3,6 +3,35 @@ using System.Collections.Generic;
 
 namespace AK
 {
+	/*
+
+	ExpressionSolver is licensed under the MIT license.
+
+	Copyright (c) 2015 Antti Kuukka
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+
+
+
+	The above copyright notice and this permission notice shall be included in
+	all copies or substantial portions of the Software.
+
+
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+	THE SOFTWARE.
+
+	*/
 
 	public class ExpressionSolver
 	{
@@ -16,6 +45,26 @@ namespace AK
 
 		public ExpressionSolver()
 		{
+			AddCustomFunction("asin",1, delegate(double[] p) {
+				return System.Math.Asin(p[0]);
+			});
+
+			AddCustomFunction("acos",1, delegate(double[] p) {
+				return System.Math.Acos(p[0]);
+			});
+
+			AddCustomFunction("atan",1, delegate(double[] p) {
+				return System.Math.Atan(p[0]);
+			});
+
+			AddCustomFunction("atan2",2, delegate(double[] p) {
+				return System.Math.Atan2(p[0],p[1]);
+			});
+			
+			AddCustomFunction("tan",1, delegate(double[] p) {
+				return System.Math.Tan(p[0]);
+			});
+
 			AddCustomFunction("floor",1, delegate(double[] p) {
 				return System.Math.Floor(p[0]);
 			});
