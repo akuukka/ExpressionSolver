@@ -15,6 +15,7 @@ namespace AK
 		FuncSin,
 		FuncCos,
 		FuncAbs,
+		FuncTan,
 		FuncCustom,
 	};
 	
@@ -22,15 +23,16 @@ namespace AK
 	{
 		public SymbolType type;
 		public double _value;
-		public Variable m_ptrToConstValue;
+		public Variable variable;
 		public SymbolList subExpression;
 		public CustomFunction customFunc;
-		
+
+		// Test if value of the symbol is independent of variables.
 		public bool IsImmutableConstant()
 		{
 			if (type == SymbolType.Value)
 			{
-				if (m_ptrToConstValue != null)
+				if (variable != null)
 					return false;
 				return true;
 			}
@@ -86,7 +88,7 @@ namespace AK
 			for (int k = 0; k < l.Length; k++) {
 				var s = l.getSymbol(k);
 				if (s.type == SymbolType.Value) {
-					if (s.m_ptrToConstValue != null) {
+					if (s.variable != null) {
 						return false;
 					}
 				}
@@ -103,7 +105,7 @@ namespace AK
 		{
 			type = o.type;
 			_value = o._value;
-			m_ptrToConstValue = o.m_ptrToConstValue;
+			variable = o.variable;
 			subExpression = o.subExpression;
 			customFunc = o.customFunc;
 		}
@@ -112,7 +114,7 @@ namespace AK
 		{
 			get
 			{
-				return m_ptrToConstValue == null ? _value : m_ptrToConstValue.value;
+				return variable == null ? _value : variable.value;
 			}
 		}
 		
@@ -120,17 +122,11 @@ namespace AK
 			return type == SymbolType.Value || type == SymbolType.SubExpression;
 		}
 		
-		public Symbol()
-		{
-			type = SymbolType.Empty;
-			m_ptrToConstValue = null;
-		}
-		
 		public Symbol(SymbolType type, double va)
 		{
 			this.type = type;
 			_value = va;
-			m_ptrToConstValue = null;
+			variable = null;
 		}
 		
 		public Symbol(SymbolType type) {
@@ -140,12 +136,12 @@ namespace AK
 		public Symbol(double value) {
 			type = SymbolType.Value;
 			_value = value;
-			m_ptrToConstValue = null;
+			variable = null;
 		}
 		
 		public Symbol(Variable ptrToConstValue) {
 			type = SymbolType.Value;
-			m_ptrToConstValue = ptrToConstValue;
+			variable = ptrToConstValue;
 		}
 		
 		public Symbol(CustomFunction func)
@@ -158,9 +154,9 @@ namespace AK
 		{
 			switch (type) {
 				case SymbolType.Value:
-					if (m_ptrToConstValue != null)
+					if (variable != null)
 					{
-						return m_ptrToConstValue.name;
+						return variable.name;
 					}
 					return _value.ToString();
 				case SymbolType.OperatorAdd:
@@ -175,6 +171,8 @@ namespace AK
 					return "cos";
 				case SymbolType.FuncPow:
 					return "pow";
+				case SymbolType.FuncTan:
+					return "builtintan";
 				case SymbolType.FuncAbs:
 					return "abs";
 				case SymbolType.SubExpression:

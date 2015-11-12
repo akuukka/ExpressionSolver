@@ -32,6 +32,12 @@ namespace AK
 					r+=(")");
 					i++;
 					break;
+				case SymbolType.FuncTan:
+					r+=("builtintan(");
+					r+=(l.getSymbol(i+1));
+					r+=(")");
+					i++;
+					break;
 				case SymbolType.FuncPow:
 					r+=(l.getSymbol(i+1));
 					r+=("^");

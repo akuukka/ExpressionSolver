@@ -60,9 +60,13 @@ namespace AK
 			AddCustomFunction("atan2",2, delegate(double[] p) {
 				return System.Math.Atan2(p[0],p[1]);
 			});
-			
-			AddCustomFunction("tan",1, delegate(double[] p) {
-				return System.Math.Tan(p[0]);
+
+			AddCustomFunction("sqrt",1, delegate(double[] p) {
+				return System.Math.Sqrt(p[0]);
+			});
+
+			AddCustomFunction("sign",1, delegate(double[] p) {
+				return System.Math.Sign(p[0]);
 			});
 
 			AddCustomFunction("floor",1, delegate(double[] p) {
@@ -163,6 +167,9 @@ namespace AK
 							case SymbolType.FuncAbs:
 								value = System.Math.Abs(value);
 								break;
+							case SymbolType.FuncTan:
+								value = System.Math.Tan(value);
+								break;
 							case SymbolType.FuncCos:
 								value = System.Math.Cos(value);
 								break;
@@ -192,25 +199,25 @@ namespace AK
 							transformNextValue = false;
 						}
 						
-						switch (prevOper) {
-						case SymbolType.OperatorMultiply:
-							curTerm *= value;
-							break;
-						case SymbolType.OperatorDivide:
-							curTerm /= value;
-							break;
-						case SymbolType.OperatorAdd:
-							sum += curTerm;
-							curTerm = value;
-							break;
-						default:
-							throw new System.Exception("Unable to parse symbols.");
+						switch (prevOper)
+						{
+							case SymbolType.OperatorMultiply:
+								curTerm *= value;
+								break;
+							case SymbolType.OperatorDivide:
+								curTerm /= value;
+								break;
+							case SymbolType.OperatorAdd:
+								sum += curTerm;
+								curTerm = value;
+								break;
+							default:
+								throw new System.Exception("Unable to parse symbols.");
 						}
 						prevOper = SymbolType.OperatorMultiply;
 						break;
 					}
 					case SymbolType.OperatorDivide:
-						
 					case SymbolType.OperatorAdd:
 						prevOper = s.type;
 						break;
@@ -218,6 +225,7 @@ namespace AK
 					case SymbolType.FuncSin:
 					case SymbolType.FuncAbs:
 					case SymbolType.FuncPow:
+					case SymbolType.FuncTan:
 					case SymbolType.FuncCustom:
 						transformNextValue = true;
 						break;
@@ -243,17 +251,22 @@ namespace AK
 		Symbol ParseBuiltInFunction(string formula,int begin,int end) {
 			int nameLength = end-begin;
 			// Check for built-in functions
-			var functionName = formula.Substring(begin,nameLength);
-			if (functionName[0] == 's' && nameLength == 3 && functionName[1] == 'i' && functionName[2] == 'n') {
-				return new Symbol(SymbolType.FuncSin);
+			if (nameLength == 3)
+			{
+				var functionName = formula.Substring(begin,nameLength);
+				if (functionName[0] == 's' && functionName[1] == 'i' && functionName[2] == 'n') {
+					return new Symbol(SymbolType.FuncSin);
+				}
+				else if (functionName[0] == 'c'	&& functionName[1] == 'o' && functionName[2] == 's') {
+					return new Symbol(SymbolType.FuncCos);
+				}
+				else if (functionName[0] == 'a'	&& functionName[1] == 'b' && functionName[2] == 's') {
+					return new Symbol(SymbolType.FuncAbs);
+				}
+				else if (functionName[0] == 't'	&& functionName[1] == 'a' && functionName[2] == 'n') {
+					return new Symbol(SymbolType.FuncTan);
+				}
 			}
-			else if (functionName[0] == 'c' && nameLength == 3 	&& functionName[1] == 'o' && functionName[2] == 's') {
-				return new Symbol(SymbolType.FuncCos);
-			}
-			else if (functionName[0] == 'a' && nameLength == 3 	&& functionName[1] == 'b' && functionName[2] == 's') {
-				return new Symbol(SymbolType.FuncAbs);
-			}
-			
 			return new Symbol(SymbolType.Empty);
 		}
 
@@ -325,6 +338,7 @@ namespace AK
 				switch (s.type) {
 					case SymbolType.FuncCos:
 					case SymbolType.FuncAbs:
+					case SymbolType.FuncTan:
 					case SymbolType.FuncSin: {
 						Symbol argument = Symbolicate(formula,i+1,end-1,exp);
 						var newSubExpression = new SymbolList();
@@ -422,7 +436,8 @@ namespace AK
 					// Unless we are dealing with a monome, symbolicate the term
 					Symbol newSymbol = SymbolicateValue(formula, formula[currentTermBegin] == '-' ? currentTermBegin + 1 : currentTermBegin, i,exp);
 					// Check if we can simplify the generated symbol
-					if (newSymbol.IsImmutableConstant()) {
+					if (newSymbol.IsImmutableConstant()) 
+					{
 						// Constants are multiplied/divided together
 						if (divideNext)
 							constMultiplier /= GetSymbolValue(newSymbol);
@@ -534,9 +549,9 @@ namespace AK
 			}
 			
 			// If at this point we only have one real number left, just return it as a simple value.
-			if (symbols.Length == 1 && symbols.getSymbol(0).type == SymbolType.Value) {
-				Symbol s = symbols.getSymbol(0);
-				return s;
+			if (symbols.Length == 1 && symbols.first.type == SymbolType.Value) 
+			{
+				return symbols.first;
 			}
 			
 			// We don't have that single expression, but:
@@ -558,7 +573,8 @@ namespace AK
 					symbols.symbols.RemoveAt(j);
 					j--;
 				}
-				else {
+				else 
+				{
 					// Skip the following + symbol
 					j++;
 				}
@@ -577,9 +593,11 @@ namespace AK
 			}
 			
 			// Optimization: get rid of unnecessary jumps to subexpressions
-			for (int j=0;j<symbols.Length;j++) {
+			for (int j=0;j<symbols.Length;j++)
+			{
 				var s = symbols.getSymbol(j);
-				if (s.type==SymbolType.SubExpression) {
+				if (s.type==SymbolType.SubExpression)
+				{
 					var subExpression = s.subExpression;
 					int subExpressionLength = subExpression.Length;
 					for (int k=0;k<subExpressionLength;k++) {
@@ -600,9 +618,6 @@ namespace AK
 			returnSymbol.Simplify();
 			return returnSymbol;
 		}
-
-
-
 	}
 
 }
