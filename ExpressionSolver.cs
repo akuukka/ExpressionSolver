@@ -98,14 +98,22 @@ namespace AK
 
 		public Variable SetGlobalVariable(string name, double value)
 		{
-			if (!globalConstants.ContainsKey(name))
+			Variable variable;
+			if (globalConstants.TryGetValue(name, out variable))
+			{
+				return variable;
+			}
+			else
 			{
 				Variable v = new Variable(name,value);
 				globalConstants.Add (name,v);
 				return v;
 			}
-			globalConstants[name].value = value;
-			return globalConstants[name];
+		}
+
+		public void ClearGlobalVariables()
+		{
+			globalConstants.Clear();
 		}
 
 		public double EvaluateExpression(string formula)
@@ -138,7 +146,7 @@ namespace AK
 			return newExpression;
 		}
 
-		static double ParseSymbols(SymbolList syms, int threadId = 0) 
+		static double ParseSymbols(SymbolList syms) 
 		{
 			bool transformNextValue = false;
 			double sum = 0;
@@ -161,40 +169,40 @@ namespace AK
 						{
 							var funcSymbol = symbolList[i-1];
 							switch (funcSymbol.type) {
-							case SymbolType.FuncSin:
-								value = System.Math.Sin(value);
-								break;
-							case SymbolType.FuncAbs:
-								value = System.Math.Abs(value);
-								break;
-							case SymbolType.FuncTan:
-								value = System.Math.Tan(value);
-								break;
-							case SymbolType.FuncCos:
-								value = System.Math.Cos(value);
-								break;
-							case SymbolType.FuncPow:
-							{
-								var rhs = GetSymbolValue(symbolList[i+1]);
-								value = System.Math.Pow(value,rhs);
-								i++;
-							}
-								break;
-							case SymbolType.FuncCustom:
-							{
-								var customFunc = funcSymbol.customFunc;
-								double[] p = new double[4];
-								p[0] = value;
-								for (int g=1;g<customFunc.paramCount;g++)
+								case SymbolType.FuncSin:
+									value = System.Math.Sin(value);
+									break;
+								case SymbolType.FuncAbs:
+									value = System.Math.Abs(value);
+									break;
+								case SymbolType.FuncTan:
+									value = System.Math.Tan(value);
+									break;
+								case SymbolType.FuncCos:
+									value = System.Math.Cos(value);
+									break;
+								case SymbolType.FuncPow:
 								{
-									p[g] = GetSymbolValue(symbolList[i+1]);
+									var rhs = GetSymbolValue(symbolList[i+1]);
+									value = System.Math.Pow(value,rhs);
 									i++;
+									break;
 								}
-								value = customFunc.func(p);
-								break;
-							}
-							default:
-								break;
+								case SymbolType.FuncCustom:
+								{
+									var customFunc = funcSymbol.customFunc;
+									double[] p = new double[4];
+									p[0] = value;
+									for (int g=1;g<customFunc.paramCount;g++)
+									{
+										p[g] = GetSymbolValue(symbolList[i+1]);
+										i++;
+									}
+									value = customFunc.func(p);
+									break;
+								}
+								default:
+									break;
 							}
 							transformNextValue = false;
 						}
@@ -244,7 +252,7 @@ namespace AK
 				return s.value;
 			}
 			var syms = s.subExpression;
-			double value = ParseSymbols(syms,0);
+			double value = ParseSymbols(syms);
 			return value;
 		}
 
@@ -394,23 +402,23 @@ namespace AK
 				}
 			}
 			
-			// Get hash value for the value name
-			var valueName = formula.Substring(begin,end-begin);//formula,begin,end
-
-			// Then immutable globals
-			if (immutableGlobalConstants.ContainsKey(valueName)) {
-				return new Symbol(immutableGlobalConstants[valueName]);
-			}
-
-			// Then non immutable globals
-			if (globalConstants.ContainsKey(valueName)) {
-				return new Symbol(globalConstants[valueName]);
-			}
+			var valueName = formula.Substring(begin,end-begin);
 
 			// Then a local constant specific to our expression
-			if (exp.constants.ContainsKey(valueName))
-			{
-				return new Symbol(exp.constants[valueName]);
+			Variable variable;
+			if (exp.constants.TryGetValue(valueName,out variable)) {
+				return new Symbol(variable);
+			}
+
+			// Non immutable globals
+			if (globalConstants.TryGetValue(valueName,out variable)) {
+				return new Symbol(variable);
+			}
+
+			// Immutable globals
+			double constDouble;
+			if (immutableGlobalConstants.TryGetValue(valueName, out constDouble)) {
+				return new Symbol(constDouble);
 			}
 
 			throw new System.Exception("Unknown expression: " + valueName);
@@ -475,7 +483,7 @@ namespace AK
 			}
 			if (constMultiplierUsed || sign % 2 == 1) {
 				// Add the const multiplier to the expression
-				if (symbols.Length > 0 && symbols.last.IsMonome() && symbols.last.type == SymbolType.SubExpression )
+				if (symbols.Length > 0 && symbols.last.type == SymbolType.SubExpression && symbols.last.IsMonome())
 				{
 					// Add inside the last subexpression
 					SymbolList leftSideExpression = symbols.last.subExpression;
@@ -499,11 +507,9 @@ namespace AK
 			// Check if the final monome is just a real number, in which case we don't have to return a subexpression type
 			if (symbols.Length == 1 && symbols.first.IsImmutableConstant())
 			{
-				return new Symbol(symbols.getSymbol(0).value);
+				return new Symbol(symbols.first.value);
 			}
-			
 			s.subExpression = symbols;
-			
 			s.Simplify();
 			return s;
 		}
@@ -585,7 +591,7 @@ namespace AK
 				}
 				symbols.Append(new Symbol(constantSum));
 			}
-			
+
 			// Finally, if the symbolicated sum is just a single real number, even varying, return just a simple symbol
 			if (symbols.Length == 1 && symbols.getSymbol(0).type == SymbolType.Value) {
 				Symbol s = symbols.getSymbol(0);
