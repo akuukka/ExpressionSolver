@@ -13,17 +13,13 @@ namespace AK {
 			{'^',")0123456789abcdefghijklmnopqrstuvxyz_" },
 			{'*',")0123456789abcdefghijklmnopqrstuvxyz_" },
 			{')',")0123456789abcdefghijklmnopqrstuvxyz_" },
-			{'(',"*-+^/()0123456789abcdefghijklmnopqrstuvxyz_" }
+			{'(',"*-+^/(0123456789abcdefghijklmnopqrstuvxyz_" }
 		};
 
 		private static bool CanPrecede(char l, char r)
 		{
-			if (!acceptedPreceders.ContainsKey(r))
-			{
-				return false;
-			}
-			else {
-				var accepted = acceptedPreceders[r];
+			string accepted;
+			if (acceptedPreceders.TryGetValue(r,out accepted)) {
 				foreach (var c in accepted)
 				{
 					if (c==l)
@@ -31,8 +27,8 @@ namespace AK {
 						return true;
 					}
 				}
-				return false;
 			}
+			return false;
 		}
 
 		private static void ThrowSyntaxErrorAt(string expression, int index) {

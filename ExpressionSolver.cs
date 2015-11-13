@@ -524,17 +524,11 @@ namespace AK
 			
 			for (;;) {
 				i++;
-				if (i == end || (currentDepth == 0 && i > begin && (formula[i - 1] != '*' && formula[i - 1] != '/') && (formula[i] == '+' || formula[i] == '-'))) {
-					// Unless we are dealing with a monome, symbolicate the term
-					try {
-						symbols.Append(SymbolicateMonome(formula, currentTermBegin, i,exp));
-					}
-					catch (System.Exception ex) 
+				if (i == end || (currentDepth == 0 && i > begin && (formula[i - 1] != '*' && formula[i - 1] != '/') && (formula[i] == '+' || formula[i] == '-')))
+				{
+					symbols.Append(SymbolicateMonome(formula, currentTermBegin, i,exp));
+					if (i == end)
 					{
-						throw ex;
-					}
-					
-					if (i == end) {
 						break;
 					}
 					else {
@@ -565,12 +559,14 @@ namespace AK
 			double constantSum = 0.0f;
 			bool addedConstants = false;
 
-			for (int j = 0; j < symbols.Length; j++) {
+			for (int j = 0; j < symbols.Length; j++)
+			{
 				Symbol s = symbols.getSymbol(j);
 				if (s.IsImmutableConstant()) {
 					constantSum += s.value;
 					addedConstants = true;
-					if (j == symbols.Length - 1) {
+					if (j == symbols.Length - 1)
+					{
 						// Destroy preceding +
 						symbols.symbols.RemoveAt (j);
 						break;
@@ -585,15 +581,18 @@ namespace AK
 					j++;
 				}
 			}
-			if (addedConstants) {
-				if (symbols.Length > 0 && symbols.getSymbol(symbols.Length - 1).IsValueType()) {
+			if (addedConstants) 
+			{
+				if (symbols.Length > 0 && symbols.getSymbol(symbols.Length - 1).IsValueType()) 
+				{
 					symbols.Append(new Symbol(SymbolType.OperatorAdd));
 				}
 				symbols.Append(new Symbol(constantSum));
 			}
 
 			// Finally, if the symbolicated sum is just a single real number, even varying, return just a simple symbol
-			if (symbols.Length == 1 && symbols.getSymbol(0).type == SymbolType.Value) {
+			if (symbols.Length == 1 && symbols.getSymbol(0).type == SymbolType.Value)
+			{
 				Symbol s = symbols.getSymbol(0);
 				return s;
 			}
@@ -606,13 +605,11 @@ namespace AK
 				{
 					var subExpression = s.subExpression;
 					int subExpressionLength = subExpression.Length;
-					for (int k=0;k<subExpressionLength;k++) {
+					for (int k=0;k<subExpressionLength;k++)
+					{
 						symbols.InsertBefore(j+k,subExpression.getSymbol(k));
 					}
 					j += subExpressionLength;
-					// The symbols of the subexpression were copied into parent symbollist
-					// Therefore we can destroy the subexpression symbollist, but only after setting it to an empty list
-					//symbols.symbols.(symbols.symbols.begin()+i);
 					symbols.symbols.RemoveAt (j);
 					j--;
 				}
