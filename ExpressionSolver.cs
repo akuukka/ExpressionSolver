@@ -395,7 +395,6 @@ namespace AK
 
 		Symbol SymbolicateMonome(string formula, int begin, int end, Expression exp)
 		{
-			Symbol s = new Symbol(SymbolType.SubExpression);
 			var symbols = new SymbolList();
 			int sign = 0;
 			int i = begin - 1;
@@ -405,9 +404,11 @@ namespace AK
 			double constMultiplier = 1.0;
 			bool divideNext = false;
 			bool constMultiplierUsed = false;
-			for (;;) {
+			for (;;) 
+			{
 				i++;
-				if (i == end || (currentDepth == 0 && i > begin && (formula[i] == '*' || formula[i] == '/'))) {
+				if (i == end || (currentDepth == 0 && i > begin && (formula[i] == '*' || formula[i] == '/')))
+				{
 					numValues++;
 					
 					// Unless we are dealing with a monome, symbolicate the term
@@ -422,7 +423,8 @@ namespace AK
 							constMultiplier *= GetSymbolValue(newSymbol);
 						constMultiplierUsed = true;
 					}
-					else {
+					else
+					{
 						if (divideNext)
 							symbols.Append(new Symbol(SymbolType.OperatorDivide));
 						newSymbol.Simplify();
@@ -435,39 +437,48 @@ namespace AK
 					divideNext = formula[i] == '/';
 					currentTermBegin = i + 1;
 				}
-				else if (formula[i] == '(') {
+				else if (formula[i] == '(')
+				{
 					currentDepth++;
 				}
-				else if (formula[i] == ')') {
+				else if (formula[i] == ')')
+				{
 					currentDepth--;
 				}
-				else if (formula[i] == '-' && currentDepth == 0 && !(i>begin && formula[i-1] == '^') ) {
+				else if (formula[i] == '-' && currentDepth == 0 && !(i>begin && formula[i-1] == '^') )
+				{
 					sign++;
 				}
 			}
 			
 			// If the generated monome has negative number of minus signs, then we append *-1 to end of the list, or if the preceding symbol is constant real number that is part of a monome, we multiply it.
-			if (sign % 2 == 1) {
+			if (sign % 2 == 1)
+			{
 				constMultiplier =-constMultiplier;
 			}
-			if (constMultiplierUsed || sign % 2 == 1) {
+			if (constMultiplierUsed || sign % 2 == 1)
+			{
 				// Add the const multiplier to the expression
 				if (symbols.Length > 0 && symbols.last.type == SymbolType.SubExpression && symbols.last.IsMonome())
 				{
 					// Add inside the last subexpression
 					SymbolList leftSideExpression = symbols.last.subExpression;
-					if (leftSideExpression.last.type==SymbolType.Value && leftSideExpression.last.IsImmutableConstant()) {
+					if (leftSideExpression.last.type==SymbolType.Value && leftSideExpression.last.IsImmutableConstant())
+					{
 						leftSideExpression.SetSymbolAtIndex(leftSideExpression.Length-1,new Symbol(leftSideExpression.last.value*constMultiplier));
 					}
-					else {
+					else
+					{
 						leftSideExpression.Append(new Symbol(constMultiplier));
 					}
 				}
-				else if (symbols.Length>0 && symbols.first.type==SymbolType.OperatorDivide) {
+				else if (symbols.Length>0 && symbols.first.type==SymbolType.OperatorDivide)
+				{
 					// Put to the begin of the expression we are building
 					symbols.symbols.Insert(0,new Symbol(constMultiplier));
 				}
-				else {
+				else
+				{
 					// Put to the end of the expression we are building
 					symbols.Append(new Symbol(constMultiplier));
 				}
@@ -478,6 +489,7 @@ namespace AK
 			{
 				return new Symbol(symbols.first.value);
 			}
+			Symbol s = new Symbol(SymbolType.SubExpression);
 			s.subExpression = symbols;
 			s.Simplify();
 			return s;
@@ -491,7 +503,8 @@ namespace AK
 			int currentTermBegin = formula[begin] == '+' ? begin + 1 : begin;
 			int currentDepth = 0;
 			
-			for (;;) {
+			for (;;) 
+			{
 				i++;
 				if (i == end || (currentDepth == 0 && i > begin && (formula[i - 1] != '*' && formula[i - 1] != '/') && (formula[i] == '+' || formula[i] == '-')))
 				{
@@ -506,13 +519,16 @@ namespace AK
 						symbols.Append(new Symbol(SymbolType.OperatorAdd));
 					}
 				}
-				else if (formula[i] == '(') {
+				else if (formula[i] == '(') 
+				{
 					currentDepth++;
 				}
-				else if (formula[i] == ')') {
+				else if (formula[i] == ')') 
+				{
 					currentDepth--;
 				}
-				else if (formula[i] == '^') {
+				else if (formula[i] == '^') 
+				{
 					i = SolverTools.ParseUntilEndOfExponent(formula,i+1,end) - 1;
 				}
 			}
