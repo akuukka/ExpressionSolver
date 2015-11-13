@@ -132,6 +132,11 @@ namespace AK
 		public Symbol(SymbolType type) {
 			this.type = type;
 		}
+
+		public Symbol(SymbolList subExpression) {
+			this.type = SymbolType.SubExpression;
+			this.subExpression = subExpression;
+		}
 		
 		public Symbol(double value) {
 			type = SymbolType.Value;

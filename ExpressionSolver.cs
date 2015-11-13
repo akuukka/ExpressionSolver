@@ -118,7 +118,12 @@ namespace AK
 
 		public double EvaluateExpression(string formula)
 		{
-			return SymbolicateExpression(formula,null).Evaluate();
+			return SymbolicateExpression(formula,(string[])null).Evaluate();
+		}
+
+		public Expression SymbolicateExpression(string formula, string localVariable) 
+		{
+			return SymbolicateExpression(formula,new string[1]{localVariable});
 		}
 
 		public Expression SymbolicateExpression(string formula, string[] localVariables = null) {
@@ -616,8 +621,7 @@ namespace AK
 			}
 			
 			// We have turned the formula into a subexpression symbol
-			Symbol returnSymbol = new Symbol(SymbolType.SubExpression);
-			returnSymbol.subExpression = symbols;
+			Symbol returnSymbol = new Symbol(symbols);
 			returnSymbol.Simplify();
 			return returnSymbol;
 		}
