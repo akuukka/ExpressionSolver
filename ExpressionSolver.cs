@@ -35,6 +35,15 @@ namespace AK
 
 	public class ExpressionSolver
 	{
+		public enum UnknownExpressionPolicy
+		{
+			Error,
+			DefineGlobalVariable,
+			DefineExpressionLocalVariable
+		}
+
+		public UnknownExpressionPolicy unknownExpressionPolicy;
+
 		private static Dictionary<string,double> immutableGlobalConstants = new Dictionary<string, double>()
 		{
 			{"e",System.Math.E},
@@ -45,6 +54,8 @@ namespace AK
 
 		public ExpressionSolver()
 		{
+			unknownExpressionPolicy = UnknownExpressionPolicy.Error;
+
 			AddCustomFunction("asin",1, delegate(double[] p) {
 				return System.Math.Asin(p[0]);
 			});
@@ -101,6 +112,7 @@ namespace AK
 			Variable variable;
 			if (globalConstants.TryGetValue(name, out variable))
 			{
+				variable.value = value;
 				return variable;
 			}
 			else
@@ -109,6 +121,11 @@ namespace AK
 				globalConstants.Add (name,v);
 				return v;
 			}
+		}
+
+		public bool RemoveGlobalVariable(string name)
+		{
+			return globalConstants.Remove(name);
 		}
 
 		public void ClearGlobalVariables()
@@ -225,7 +242,7 @@ namespace AK
 								curTerm = value;
 								break;
 							default:
-								throw new System.Exception("Unable to parse symbols.");
+								throw new System.Exception("Very unexpected parse error.");
 						}
 						prevOper = SymbolType.OperatorMultiply;
 						break;
@@ -394,14 +411,14 @@ namespace AK
 									
 								}
 							}
-							else {
-								string errorMessage = "Function " + customFunc.name + " requires " + requiredParameterCount + " parameters, " + foundParameterCount + " found.";
-								throw new System.Exception(errorMessage);
+							else 
+							{
+								throw new ESInvalidParametersException(customFunc.name + " expects " + requiredParameterCount + " parameters, " + foundParameterCount + " given.");
 							}
 						}
 						else
 						{
-							throw new System.Exception("Function " + funcName + " not recognized");
+							throw new ESInvalidFunctionNameException(customFunc.name);
 						}
 					}
 				}
@@ -422,11 +439,26 @@ namespace AK
 
 			// Immutable globals
 			double constDouble;
-			if (immutableGlobalConstants.TryGetValue(valueName, out constDouble)) {
+			if (immutableGlobalConstants.TryGetValue(valueName, out constDouble)) 
+			{
 				return new Symbol(constDouble);
 			}
 
-			throw new System.Exception("Unknown expression: " + valueName);
+			// Found an unknown value name. Check policy to see what to do.
+			Variable v = null;
+			switch (unknownExpressionPolicy)
+			{
+				case UnknownExpressionPolicy.DefineExpressionLocalVariable:
+					v = new Variable(valueName,0);
+					exp.constants.Add(valueName,v);
+					return new Symbol(v);
+				case UnknownExpressionPolicy.DefineGlobalVariable:
+					v = new Variable(valueName,0);
+					globalConstants.Add(valueName,v);
+					return new Symbol(v);
+				default:
+					throw new ESUnknownExpressionException(valueName);
+			}
 		}
 
 		Symbol SymbolicateMonome(string formula, int begin, int end, Expression exp)

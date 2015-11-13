@@ -45,7 +45,7 @@ namespace AK {
 			if (to<l) {
 				str+="...";
 			}
-			throw new System.Exception(str);
+			throw new ESSyntaxErrorException(str);
 		}
 
 		private static bool CanBeBeginOfRValue(char c) {
@@ -82,7 +82,7 @@ namespace AK {
 						break;
 					case ')':
 						if (parenthesisDepth == 0) {
-							throw new System.Exception("Parenthesis mismatch.");
+							throw new ESSyntaxErrorException("Parenthesis mismatch.");
 						}
 						if (i>0 && !CanPrecede(expression[i-1],expression[i])) {
 							ThrowSyntaxErrorAt(expression,i);
@@ -132,11 +132,11 @@ namespace AK {
 							break;
 						if (x == '_')
 							break;
-						throw new System.Exception("Unaccepted character: " + expression.Substring(i,1));
+						throw new ESInvalidCharacterException(expression.Substring(i,1));
 				}
 			}
 			if (parenthesisDepth > 0) {
-				throw new System.Exception("Parenthesis mismatch.");
+				throw new ESSyntaxErrorException("Parenthesis mismatch.");
 			}
 		}
 

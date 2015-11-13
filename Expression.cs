@@ -20,7 +20,7 @@ namespace AK
 			constants.Add(name,v);
 			return v;
 		}
-		
+
 		public Variable GetConstant(string name)
 		{
 			return constants[name];
