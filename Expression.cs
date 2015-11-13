@@ -25,7 +25,7 @@ namespace AK
 		{
 			return constants[name];
 		}
-		
+
 		public double Evaluate()
 		{
 			return ExpressionSolver.GetSymbolValue(root);

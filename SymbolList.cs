@@ -14,30 +14,6 @@ namespace AK
 			for (int i=0;i<l.symbols.Count;i++) {
 				var s = l.getSymbol(i);
 				switch (s.type) {
-				case SymbolType.FuncSin:
-					r+=("sin(");
-					r+=(l.getSymbol(i+1)).ToString();
-					r+=(")");
-					i++;
-					break;
-				case SymbolType.FuncCos:
-					r+=("cos(");
-					r+=(l.getSymbol(i+1));
-					r+=(")");
-					i++;
-					break;
-				case SymbolType.FuncAbs:
-					r+=("abs(");
-					r+=(l.getSymbol(i+1));
-					r+=(")");
-					i++;
-					break;
-				case SymbolType.FuncTan:
-					r+=("builtintan(");
-					r+=(l.getSymbol(i+1));
-					r+=(")");
-					i++;
-					break;
 				case SymbolType.FuncPow:
 					r+=(l.getSymbol(i+1));
 					r+=("^");

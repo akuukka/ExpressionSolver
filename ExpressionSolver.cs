@@ -57,70 +57,26 @@ namespace AK
 		public ExpressionSolver()
 		{
 			unknownExpressionPolicy = UnknownExpressionPolicy.Error;
-
-			AddCustomFunction("asin",1, delegate(double[] p) {
-				return System.Math.Asin(p[0]);
-			});
-
-			AddCustomFunction("acos",1, delegate(double[] p) {
-				return System.Math.Acos(p[0]);
-			});
-
-			AddCustomFunction("atan",1, delegate(double[] p) {
-				return System.Math.Atan(p[0]);
-			});
-
-			AddCustomFunction("atan2",2, delegate(double[] p) {
-				return System.Math.Atan2(p[0],p[1]);
-			});
-
-			AddCustomFunction("sqrt",1, delegate(double[] p) {
-				return System.Math.Sqrt(p[0]);
-			});
-
-			AddCustomFunction("sign",1, delegate(double[] p) {
-				return System.Math.Sign(p[0]);
-			});
-
-			AddCustomFunction("floor",1, delegate(double[] p) {
-				return System.Math.Floor(p[0]);
-			});
-
-			AddCustomFunction("ceil",1, delegate(double[] p) {
-				return System.Math.Ceiling(p[0]);
-			});
-
-			AddCustomFunction("min",2, delegate(double[] p) {
-				return System.Math.Min(p[0],p[1]);
-			});
-
-			AddCustomFunction("max",2, delegate(double[] p) {
-				return System.Math.Max(p[0],p[1]);
-			});
-			
-			AddCustomFunction("sinh",1, delegate(double[] p) {
-				return System.Math.Sinh(p[0]);
-			});
-			
-			AddCustomFunction("cosh",1, delegate(double[] p) {
-				return System.Math.Cosh(p[0]);
-			});
-			
-			AddCustomFunction("tanh",1, delegate(double[] p) {
-				return System.Math.Tanh(p[0]);
-			});
-			
-			AddCustomFunction("log",1, delegate(double[] p) {
-				return System.Math.Log(p[0]);
-			});
-			
-			AddCustomFunction("log10",1, delegate(double[] p) {
-				return System.Math.Log10(p[0]);
-			});
-			
-			AddCustomFunction("round",1, delegate(double[] p) {
-				return System.Math.Round(p[0]);
-			});
+			AddCustomFunction("sin",1, delegate(double[] p) { return System.Math.Sin(p[0]);	});
+			AddCustomFunction("cos",1, delegate(double[] p) { return System.Math.Cos(p[0]);	});
+			AddCustomFunction("tan",1, delegate(double[] p) { return System.Math.Tan(p[0]);	});
+			AddCustomFunction("abs",1, delegate(double[] p) { return System.Math.Abs(p[0]);	});
+			AddCustomFunction("asin",1, delegate(double[] p) { return System.Math.Asin(p[0]); });
+			AddCustomFunction("acos",1, delegate(double[] p) { return System.Math.Acos(p[0]); });
+			AddCustomFunction("atan",1, delegate(double[] p) { return System.Math.Atan(p[0]); });
+			AddCustomFunction("atan2",2, delegate(double[] p) {	return System.Math.Atan2(p[0],p[1]); });
+			AddCustomFunction("sqrt",1, delegate(double[] p) { return System.Math.Sqrt(p[0]); });
+			AddCustomFunction("sign",1, delegate(double[] p) { return System.Math.Sign(p[0]); });
+			AddCustomFunction("floor",1, delegate(double[] p) { return System.Math.Floor(p[0]); });
+			AddCustomFunction("ceil",1, delegate(double[] p) { return System.Math.Ceiling(p[0]); });
+			AddCustomFunction("min",2, delegate(double[] p) { return System.Math.Min(p[0],p[1]); });
+			AddCustomFunction("max",2, delegate(double[] p) { return System.Math.Max(p[0],p[1]); });
+			AddCustomFunction("sinh",1, delegate(double[] p) { return System.Math.Sinh(p[0]); });
+			AddCustomFunction("cosh",1, delegate(double[] p) { return System.Math.Cosh(p[0]); });
+			AddCustomFunction("tanh",1, delegate(double[] p) { return System.Math.Tanh(p[0]); });
+			AddCustomFunction("log",1, delegate(double[] p) { return System.Math.Log(p[0]); });
+			AddCustomFunction("log10",1, delegate(double[] p) { return System.Math.Log10(p[0]); });
+			AddCustomFunction("round",1, delegate(double[] p) { return System.Math.Round(p[0]); });
 		}
 
 		public void AddCustomFunction(string name, int paramCount, System.Func<double[],double> func)
@@ -209,7 +165,8 @@ namespace AK
 			int len = syms.symbols.Count;
 			var symbolList = syms.symbols;
 			
-			for (int i=0;i<len;i++) {
+			for (int i=0;i<len;i++) 
+			{
 				var s = symbolList[i];
 				switch (s.type)
 				{
@@ -221,18 +178,6 @@ namespace AK
 						{
 							var funcSymbol = symbolList[i-1];
 							switch (funcSymbol.type) {
-								case SymbolType.FuncSin:
-									value = System.Math.Sin(value);
-									break;
-								case SymbolType.FuncAbs:
-									value = System.Math.Abs(value);
-									break;
-								case SymbolType.FuncTan:
-									value = System.Math.Tan(value);
-									break;
-								case SymbolType.FuncCos:
-									value = System.Math.Cos(value);
-									break;
 								case SymbolType.FuncPow:
 								{
 									var rhs = GetSymbolValue(symbolList[i+1]);
@@ -281,11 +226,7 @@ namespace AK
 					case SymbolType.OperatorAdd:
 						prevOper = s.type;
 						break;
-					case SymbolType.FuncCos:
-					case SymbolType.FuncSin:
-					case SymbolType.FuncAbs:
 					case SymbolType.FuncPow:
-					case SymbolType.FuncTan:
 					case SymbolType.FuncCustom:
 						transformNextValue = true;
 						break;
@@ -306,28 +247,6 @@ namespace AK
 			var syms = s.subExpression;
 			double value = ParseSymbols(syms);
 			return value;
-		}
-
-		Symbol ParseBuiltInFunction(string formula,int begin,int end) {
-			int nameLength = end-begin;
-			// Check for built-in functions
-			if (nameLength == 3)
-			{
-				var functionName = formula.Substring(begin,nameLength);
-				if (functionName[0] == 's' && functionName[1] == 'i' && functionName[2] == 'n') {
-					return new Symbol(SymbolType.FuncSin);
-				}
-				else if (functionName[0] == 'c'	&& functionName[1] == 'o' && functionName[2] == 's') {
-					return new Symbol(SymbolType.FuncCos);
-				}
-				else if (functionName[0] == 'a'	&& functionName[1] == 'b' && functionName[2] == 's') {
-					return new Symbol(SymbolType.FuncAbs);
-				}
-				else if (functionName[0] == 't'	&& functionName[1] == 'a' && functionName[2] == 'n') {
-					return new Symbol(SymbolType.FuncTan);
-				}
-			}
-			return new Symbol(SymbolType.Empty);
 		}
 
 		Symbol SymbolicateValue(string formula, int begin, int end, Expression exp)
@@ -394,63 +313,46 @@ namespace AK
 					}
 					i++;
 				}
-				Symbol s = ParseBuiltInFunction(formula,begin,i);
-				switch (s.type) {
-					case SymbolType.FuncCos:
-					case SymbolType.FuncAbs:
-					case SymbolType.FuncTan:
-					case SymbolType.FuncSin: {
-						Symbol argument = Symbolicate(formula,i+1,end-1,exp);
-						var newSubExpression = new SymbolList();
-						newSubExpression.Append(new Symbol(s.type));
-						newSubExpression.Append(argument);
-						Symbol newSymbol = new Symbol(SymbolType.SubExpression);
-						newSymbol.subExpression = newSubExpression;
-						return newSymbol;
+
+				string funcName = formula.Substring(begin,i-begin);
+				CustomFunction customFunc;
+				if (customFuncs.TryGetValue(funcName,out customFunc))
+				{
+					int requiredParameterCount = customFunc.paramCount;
+					int foundParameterCount = SolverTools.CountParameters(formula,begin,end);
+					if (requiredParameterCount == foundParameterCount) {
+						if (requiredParameterCount == 1) {
+							Symbol argument = Symbolicate(formula,i+1,end-1,exp);
+							SymbolList newSubExpression = new SymbolList();
+							newSubExpression.Append(new Symbol(customFunc));
+							newSubExpression.Append(argument);
+							Symbol newSymbol = new Symbol(SymbolType.SubExpression);
+							newSymbol.subExpression = newSubExpression;
+							return newSymbol;
+						}
+						else {
+							List<SolverTools.IntPair> parameters = SolverTools.ParseParameters(formula,i,end);
+							SymbolList newSubExpression = new SymbolList();
+							newSubExpression.Append(new Symbol(customFunc));
+							for (int k=0;k<requiredParameterCount;k++) {
+								Symbol p = Symbolicate(formula,parameters[k].first,parameters[k].second,exp);
+								newSubExpression.Append(p);
+							}
+							
+							Symbol newSymbol = new Symbol(SymbolType.SubExpression);
+							newSymbol.subExpression = newSubExpression;
+							return newSymbol;
+							
+						}
 					}
-					default:
+					else 
 					{
-						string funcName = formula.Substring(begin,i-begin);
-						CustomFunction customFunc;
-						if (customFuncs.TryGetValue(funcName,out customFunc))
-						{
-							int requiredParameterCount = customFunc.paramCount;
-							int foundParameterCount = SolverTools.CountParameters(formula,begin,end);
-							if (requiredParameterCount == foundParameterCount) {
-								if (requiredParameterCount == 1) {
-									Symbol argument = Symbolicate(formula,i+1,end-1,exp);
-									SymbolList newSubExpression = new SymbolList();
-									newSubExpression.Append(new Symbol(customFunc));
-									newSubExpression.Append(argument);
-									Symbol newSymbol = new Symbol(SymbolType.SubExpression);
-									newSymbol.subExpression = newSubExpression;
-									return newSymbol;
-								}
-								else {
-									List<SolverTools.IntPair> parameters = SolverTools.ParseParameters(formula,i,end);
-									SymbolList newSubExpression = new SymbolList();
-									newSubExpression.Append(new Symbol(customFunc));
-									for (int k=0;k<requiredParameterCount;k++) {
-										Symbol p = Symbolicate(formula,parameters[k].first,parameters[k].second,exp);
-										newSubExpression.Append(p);
-									}
-									
-									Symbol newSymbol = new Symbol(SymbolType.SubExpression);
-									newSymbol.subExpression = newSubExpression;
-									return newSymbol;
-									
-								}
-							}
-							else 
-							{
-								throw new ESInvalidParametersException(customFunc.name + " expects " + requiredParameterCount + " parameters, " + foundParameterCount + " given.");
-							}
-						}
-						else
-						{
-							throw new ESInvalidFunctionNameException(customFunc.name);
-						}
+						throw new ESInvalidParametersException(customFunc.name + " expects " + requiredParameterCount + " parameters, " + foundParameterCount + " given.");
 					}
+				}
+				else
+				{
+					throw new ESInvalidFunctionNameException(funcName);
 				}
 			}
 			

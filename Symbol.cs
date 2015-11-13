@@ -12,10 +12,6 @@ namespace AK
 		OperatorDivide,
 		SubExpression,
 		FuncPow,
-		FuncSin,
-		FuncCos,
-		FuncAbs,
-		FuncTan,
 		FuncCustom,
 	};
 	
@@ -85,15 +81,20 @@ namespace AK
 		
 		private bool IsSymbolListImmutableConstant(SymbolList l)
 		{
-			for (int k = 0; k < l.Length; k++) {
+			for (int k = 0; k < l.Length; k++)
+			{
 				var s = l.getSymbol(k);
-				if (s.type == SymbolType.Value) {
-					if (s.variable != null) {
+				if (s.type == SymbolType.Value)
+				{
+					if (s.variable != null)
+					{
 						return false;
 					}
 				}
-				else if (l.getSymbol(k).type == SymbolType.SubExpression) {
-					if (!IsSymbolListImmutableConstant(s.subExpression)) {
+				else if (l.getSymbol(k).type == SymbolType.SubExpression)
+				{
+					if (!IsSymbolListImmutableConstant(s.subExpression))
+					{
 						return false;
 					}
 				}
@@ -170,16 +171,8 @@ namespace AK
 					return "*";
 				case SymbolType.OperatorDivide:
 					return "/";
-				case SymbolType.FuncSin:
-					return "sin";
-				case SymbolType.FuncCos:
-					return "cos";
 				case SymbolType.FuncPow:
 					return "pow";
-				case SymbolType.FuncTan:
-					return "builtintan";
-				case SymbolType.FuncAbs:
-					return "abs";
 				case SymbolType.SubExpression:
 					return "("+subExpression.ToString()+")";
 				case SymbolType.Empty:
