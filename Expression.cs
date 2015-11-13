@@ -26,6 +26,19 @@ namespace AK
 			return constants[name];
 		}
 
+		public override string ToString()
+		{
+			if (root.type == SymbolType.SubExpression)
+			{
+				var s = root.ToString();
+				return s.Substring(1,s.Length-2);
+			}
+			else
+			{
+				return root.ToString();
+			}
+		}
+
 		public double Evaluate()
 		{
 			return ExpressionSolver.GetSymbolValue(root);
