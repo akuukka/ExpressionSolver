@@ -8,6 +8,11 @@ namespace AK
 		public ESSyntaxErrorException(string msg) : base(msg) {}
 	}
 
+	public class ESTooManyParametersException : System.Exception
+	{
+		public ESTooManyParametersException(string msg) : base(msg) {}
+	}
+
 	public class ESInvalidCharacterException : System.Exception
 	{
 		public ESInvalidCharacterException(string msg) : base(msg) {}

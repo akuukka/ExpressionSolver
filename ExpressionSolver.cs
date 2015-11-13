@@ -35,6 +35,8 @@ namespace AK
 
 	public class ExpressionSolver
 	{
+		private static readonly int MaxCustomFunctionParamCount = 4;
+
 		public enum UnknownExpressionPolicy
 		{
 			Error,
@@ -44,12 +46,12 @@ namespace AK
 
 		public UnknownExpressionPolicy unknownExpressionPolicy;
 
-		private static Dictionary<string,double> immutableGlobalConstants = new Dictionary<string, double>()
+		private static Dictionary<string, double> immutableGlobalConstants = new Dictionary<string, double>()
 		{
 			{"e",System.Math.E},
 			{"pi",System.Math.PI}
 		};
-		private Dictionary<string,Variable> globalConstants = new Dictionary<string, Variable>();
+		private Dictionary<string, Variable> globalConstants = new Dictionary<string, Variable>();
 		private Dictionary<string, CustomFunction> customFuncs = new Dictionary<string, CustomFunction>();
 
 		public ExpressionSolver()
@@ -95,10 +97,38 @@ namespace AK
 			AddCustomFunction("max",2, delegate(double[] p) {
 				return System.Math.Max(p[0],p[1]);
 			});
+			
+			AddCustomFunction("sinh",1, delegate(double[] p) {
+				return System.Math.Sinh(p[0]);
+			});
+			
+			AddCustomFunction("cosh",1, delegate(double[] p) {
+				return System.Math.Cosh(p[0]);
+			});
+			
+			AddCustomFunction("tanh",1, delegate(double[] p) {
+				return System.Math.Tanh(p[0]);
+			});
+			
+			AddCustomFunction("log",1, delegate(double[] p) {
+				return System.Math.Log(p[0]);
+			});
+			
+			AddCustomFunction("log10",1, delegate(double[] p) {
+				return System.Math.Log10(p[0]);
+			});
+			
+			AddCustomFunction("round",1, delegate(double[] p) {
+				return System.Math.Round(p[0]);
+			});
 		}
 
 		public void AddCustomFunction(string name, int paramCount, System.Func<double[],double> func)
 		{
+			if (paramCount>MaxCustomFunctionParamCount)
+			{
+				throw new ESTooManyParametersException("Custom functions can have no more than " + MaxCustomFunctionParamCount + " parameters");
+			}
 			customFuncs[name] = new CustomFunction(name, paramCount, func);
 		}
 
@@ -213,7 +243,7 @@ namespace AK
 								case SymbolType.FuncCustom:
 								{
 									var customFunc = funcSymbol.customFunc;
-									double[] p = new double[4];
+									double[] p = new double[MaxCustomFunctionParamCount];
 									p[0] = value;
 									for (int g=1;g<customFunc.paramCount;g++)
 									{
