@@ -130,6 +130,10 @@ namespace AK
 						return false;
 					}
 				}
+				else if (l.getSymbol(k).type == SymbolType.FuncCustom && l.getSymbol(k).customFunc.isRandom)
+				{
+					return false;
+				}
 				else if (l.getSymbol(k).type == SymbolType.SubExpression)
 				{
 					if (!IsSymbolListImmutableConstant(s.subExpression))

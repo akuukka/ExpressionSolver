@@ -89,11 +89,29 @@ On my laptop, the latter loop was around 25% faster than the former.
 
 Custom functions that take up to 4 parameters are also supported:
 
-    solver.AddCustomFunction("Rnd",2, delegate(double[] p) {
-        return UnityEngine.Random.Range(p[0],p[1]);
-    });
+    solver.AddCustomFunction("average",2, delegate(double[] p) { return 0.5*(p[0]+p[1]); });
+    solver.AddCustomFunction("inverse",1, delegate(double[] p) { return 1.0/p[0]; });
 
-    solver.EvaluateExpression("Rnd(0,1)"); // Returns something from [0,1]
+If you pass a constant value to a custom function, then the function is evaluated at symbolication time. Therefore, the following loop
+runs very fast:
+
+    var exp = solver.SymbolicateExpression("sin(cos(tan(31232^321)))");
+    for (int i=0;i<10000;i++)
+        exp.Evaluate();
+
+However, this is not acceptable if your function produces random output. In that case, you must tell ExpressionSolver that
+this optimization should not be used with the function:
+
+    solver.AddCustomFunction("Rnd",2, delegate(double[] p) {
+			return UnityEngine.Random.Range((float)p[0],(float)p[1]);
+		},true);
+    // Now we get different value on each iteration
+    var exp = solver.SymbolicateExpression("Rnd(0,1)");
+    for (int i=0;i<10000;i++)
+        exp.Evaluate();
+
+Since the last parameter passed to AddCustomFunction (isRandom) was true, the custom Rnd function was not evaluated at symbolication time
+and we got the desired results.
 
 The following functions are supported by default:
 

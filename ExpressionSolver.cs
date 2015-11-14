@@ -79,14 +79,14 @@ namespace AK
 			AddCustomFunction("log10",1, delegate(double[] p) { return System.Math.Log10(p[0]); });
 			AddCustomFunction("round",1, delegate(double[] p) { return System.Math.Round(p[0]); });
 		}
-
-		public void AddCustomFunction(string name, int paramCount, System.Func<double[],double> func)
+		
+		public void AddCustomFunction(string name, int paramCount, System.Func<double[],double> func, bool isRandom = false)
 		{
 			if (paramCount>MaxCustomFunctionParamCount)
 			{
 				throw new ESTooManyParametersException("Custom functions can have no more than " + MaxCustomFunctionParamCount + " parameters");
 			}
-			customFuncs[name] = new CustomFunction(name, paramCount, func);
+			customFuncs[name] = new CustomFunction(name, paramCount, func, isRandom);
 		}
 
 		public void RemoveCustomFunction(string name)
