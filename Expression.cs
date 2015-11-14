@@ -21,7 +21,7 @@ namespace AK
 			return v;
 		}
 
-		public Variable GetConstant(string name)
+		public Variable GetVariable(string name)
 		{
 			return constants[name];
 		}

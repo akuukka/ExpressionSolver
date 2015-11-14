@@ -37,14 +37,14 @@ namespace AK
 	{
 		private static readonly int MaxCustomFunctionParamCount = 4;
 
-		public enum UnknownExpressionPolicy
+		public enum UndefinedVariablePolicy
 		{
 			Error,
 			DefineGlobalVariable,
 			DefineExpressionLocalVariable
 		}
 
-		public UnknownExpressionPolicy unknownExpressionPolicy;
+		public UndefinedVariablePolicy undefinedVariablePolicy;
 
 		private static Dictionary<string, double> immutableGlobalConstants = new Dictionary<string, double>()
 		{
@@ -56,7 +56,7 @@ namespace AK
 
 		public ExpressionSolver()
 		{
-			unknownExpressionPolicy = UnknownExpressionPolicy.Error;
+			undefinedVariablePolicy = UndefinedVariablePolicy.Error;
 			AddCustomFunction("sin",1, delegate(double[] p) { return System.Math.Sin(p[0]);	});
 			AddCustomFunction("cos",1, delegate(double[] p) { return System.Math.Cos(p[0]);	});
 			AddCustomFunction("tan",1, delegate(double[] p) { return System.Math.Tan(p[0]);	});
@@ -72,6 +72,7 @@ namespace AK
 			AddCustomFunction("min",2, delegate(double[] p) { return System.Math.Min(p[0],p[1]); });
 			AddCustomFunction("max",2, delegate(double[] p) { return System.Math.Max(p[0],p[1]); });
 			AddCustomFunction("sinh",1, delegate(double[] p) { return System.Math.Sinh(p[0]); });
+			AddCustomFunction("exp",1, delegate(double[] p) { return System.Math.Exp(p[0]); });
 			AddCustomFunction("cosh",1, delegate(double[] p) { return System.Math.Cosh(p[0]); });
 			AddCustomFunction("tanh",1, delegate(double[] p) { return System.Math.Tanh(p[0]); });
 			AddCustomFunction("log",1, delegate(double[] p) { return System.Math.Log(p[0]); });
@@ -91,6 +92,11 @@ namespace AK
 		public void RemoveCustomFunction(string name)
 		{
 			customFuncs.Remove (name);
+		}
+
+		public Variable GetGlobalVariable(string name)
+		{
+			return globalConstants[name];
 		}
 
 		public Variable SetGlobalVariable(string name, double value)
@@ -378,13 +384,13 @@ namespace AK
 
 			// Found an unknown value name. Check policy to see what to do.
 			Variable v = null;
-			switch (unknownExpressionPolicy)
+			switch (undefinedVariablePolicy)
 			{
-				case UnknownExpressionPolicy.DefineExpressionLocalVariable:
+				case UndefinedVariablePolicy.DefineExpressionLocalVariable:
 					v = new Variable(valueName,0);
 					exp.constants.Add(valueName,v);
 					return new Symbol(v);
-				case UnknownExpressionPolicy.DefineGlobalVariable:
+				case UndefinedVariablePolicy.DefineGlobalVariable:
 					v = new Variable(valueName,0);
 					globalConstants.Add(valueName,v);
 					return new Symbol(v);

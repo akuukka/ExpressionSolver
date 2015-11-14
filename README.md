@@ -5,63 +5,120 @@ Usage:
 
 The basic use cases:
 
-AK.ExpressionSolver solver = new AK.ExpressionSolver();
-var exp = solver.SymbolicateExpression("1+1");
-var result = exp.Evaluate(); // Returns 2.0
-solver.EvaluateExpression("1+1"); // Also returns 2.0
+    AK.ExpressionSolver solver = new AK.ExpressionSolver();
+    var exp = solver.SymbolicateExpression("1+1");
+    var result = exp.Evaluate(); // Returns 2.0
+    solver.EvaluateExpression("1+1"); // Also returns 2.0
 
 
 Expression is symbolicated only once: subsequent calls to Evaluate are fast.
 
-There are two kinds of variables: global and expression-local.
+There are two kinds of variables: global and expression-local. Global variables
+are shared between all Expressions created using the same parser object:
 
-Global variables must be defined before symbolication and they are shared between all expressions created
-using the same ExpressionSolver object. 
+    ExpressionSolver solver = new ExpressionSolver();
+    solver.SetGlobalVariable("test",1);
+    var exp1 = solver.SymbolicateExpression("test+1");
+    AssertSameValue(2.0,exp1.Evaluate());
+    solver.SetGlobalVariable("test",2);
+    var exp2 = solver.SymbolicateExpression("test+1");
+    AssertSameValue(3.0,exp2.Evaluate());
+    AssertSameValue(exp1.Evaluate(),exp2.Evaluate());
 
-AK.ExpressionSolver solver = new AK.ExpressionSolver();
-solver.SetVariable("myvariable",50);
-var exp = solver.SymbolicateExpression("myvariable-50");
-var result = exp.Evaluate(); // Returns 0.0
+This can be problematic in a multithreaded environment. Therefore, ExpressionSolver
+also provides expression-local variables:
 
-If you need thread safety, use expression-local variables:
+			ExpressionSolver solver = new ExpressionSolver();
+			var exp1 = solver.SymbolicateExpression("test+1",new string[]{"test"});
+			exp1.SetVariable("test",1.0);
+			var exp2 = solver.SymbolicateExpression("test+1","test"); // If you define only one variable, you don't need to use the string[] format
+			exp2.SetVariable("test",2.0);
+			solver.SetGlobalVariable("test",1000); // If there is name clash with a exp-local variable, we prefer the exp-local variable.
+			AssertSameValue(exp1.Evaluate(),2);
+			AssertSameValue(exp2.Evaluate(),3);
+			var exp3 = solver.SymbolicateExpression("test^2");
+			AssertSameValue(exp3.Evaluate(),1000*1000);
 
-AK.ExpressionSolver solver = new AK.ExpressionSolver();
-var exp1 = solver.SymbolicateExpression("x^2",new string[]{"x"}");
-var exp2 = solver.SymbolicateExpression("x^3",new string[]{"x"}");
+You can choose how ExpressionSolver should handle undefined variables. The default policy is to throw an exception:
 
-// Thread 1:
-var var1 = exp1.SetVariable("x",0.0)
-for (int i=0;i<=10000;i++)
-{
-	var1.value = i/10000;
-	double val = exp1.Evaluate();
-}
+            ExpressionSolver solver = new ExpressionSolver();
+			try {
+				var exp1 = solver.SymbolicateExpression("test");
+				throw new System.Exception("We shouldn't be here!");
+			}
+			catch (AK.ESUnknownExpressionException) {
+				// Expected behaviour
+			}
 
-// Thread 2:
-var var2 = exp2.SetVariable("x",0.0)
-for (int i=0;i<=1000;i++)
-{
-	var2.value = i/10000;
-	double val = exp2.Evaluate();
-}
+You can override the default policy:
+
+			solver.undefinedVariablePolicy = ExpressionSolver.UndefinedVariablePolicy.DefineGlobalVariable;
+			var exp2 = solver.SymbolicateExpression("test2");
+			AssertSameValue(solver.GetGlobalVariable("test2").value,0);
+			AssertSameValue(exp2.Evaluate(),0);
+
+			solver.undefinedVariablePolicy = ExpressionSolver.UndefinedVariablePolicy.DefineExpressionLocalVariable;
+			var exp3 = solver.SymbolicateExpression("sin(test3)");
+			var test3 = exp3.GetVariable("test3");
+			AssertSameValue(test3.value,0);
+			test3.value = System.Math.PI/2;
+			AssertSameValue(exp3.Evaluate(),1);
+
+There are two ways to change values stored in variable. You can of course use the solver.SetGlobalVariable/exp.SetVariable functions,
+used in above examples. If you want to do a huge number of evaluations, you may want to use solver.GetGlobalVariable/exp.GetVariable to
+get reference to the variable. With the reference, you can change the value without using hash tables:
+
+			const int N = 1000000;
+			ExpressionSolver solver = new ExpressionSolver();
+			var exp = solver.SymbolicateExpression("1/2^i","i");
+			double sum = 0;
+			for (int i=0;i<N;i++)
+			{
+				exp.SetVariable("i",i);
+				sum += exp.Evaluate();
+			}
+			AssertSameValue(sum,2);
+			sum = 0;
+			var variable = exp.GetVariable("i");
+			for (int i=0;i<N;i++)
+			{
+				variable.value = i;
+				sum += exp.Evaluate();
+			}
+			AssertSameValue(sum,2);
+
+On my laptop, the latter loop was around 33% faster than the former.
 
 Custom functions are also supported:
 
-solver.AddCustomFunction("Rnd",2, delegate(double[] p) {
-	return UnityEngine.Random.Range(p[0],p[1]);
-});
+    solver.AddCustomFunction("Rnd",2, delegate(double[] p) {
+        return UnityEngine.Random.Range(p[0],p[1]);
+    });
 
-solver.EvaluateExpression("Rnd(0,1)"); // Returns something from [0,1]
+    solver.EvaluateExpression("Rnd(0,1)"); // Returns something from [0,1]
 
+The following functions are supported by default:
 
+    sin,cos,tan,sinh,cosh,tanh,asin,acos,atan,atan2,abs,min,max,exp,log,log10,
+    ceil,floor,round,sqrt
 
+Some examples:
 
+    ExpressionSolver solver = new ExpressionSolver();
+    solver.SetGlobalVariable("zero",0);
+    var exp1 = solver.SymbolicateExpression("sin(pi/2)-cos(zero)");
+    AssertSameValue(exp1.Evaluate(),0);
+    var exp2 = solver.SymbolicateExpression("2*e^zero - exp(zero)");
+    AssertSameValue(exp2.Evaluate(),1);
+    var exp3 = solver.SymbolicateExpression("log(e^6)");
+    AssertSameValue(exp3.Evaluate(),6);
+    var exp4 = solver.SymbolicateExpression("sqrt(2)-2^0.5");
+    AssertSameValue(exp4.Evaluate(),0);
 
+Have fun with ExpressionSolver!
 
 
 ExpressionSolver is licensed under the MIT license.
-
-
 
 
 Copyright (c) 2015 Antti Kuukka
