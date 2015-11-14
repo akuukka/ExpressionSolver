@@ -11,7 +11,7 @@ namespace AK
 		OperatorMultiply,
 		OperatorDivide,
 		SubExpression,
-		FuncPow,
+		Pow,
 		FuncCustom,
 	};
 	
@@ -102,13 +102,16 @@ namespace AK
 
 		public void Simplify() {
 			// ((x)) ==> (x)
-			if (type == SymbolType.SubExpression) {
-				if (subExpression.Length == 1 && subExpression.first.type == SymbolType.SubExpression) {
+			if (type == SymbolType.SubExpression)
+			{
+				if (subExpression.Length == 1 && subExpression.first.type == SymbolType.SubExpression)
+				{
 					// Get pointer to sub-subexpression
 					SymbolList subSubExpression = subExpression.symbols[0].subExpression;
 					subExpression = subSubExpression;
 				}
-				else if (subExpression.Length == 1 && subExpression.first.type == SymbolType.Value) {
+				else if (subExpression.Length == 1 && subExpression.first.type == SymbolType.Value)
+				{
 					// We have single real number surrounded by parenthesis, it can become a real number
 					CopyValuesFrom(subExpression.first);
 				}
@@ -208,7 +211,7 @@ namespace AK
 					return "*";
 				case SymbolType.OperatorDivide:
 					return "/";
-				case SymbolType.FuncPow:
+				case SymbolType.Pow:
 					return "pow";
 				case SymbolType.SubExpression:
 					return "("+subExpression.ToString()+")";

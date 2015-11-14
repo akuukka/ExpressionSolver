@@ -14,7 +14,7 @@ namespace AK
 			for (int i=0;i<l.symbols.Count;i++) {
 				var s = l.getSymbol(i);
 				switch (s.type) {
-				case SymbolType.FuncPow:
+				case SymbolType.Pow:
 					r+=(l.getSymbol(i+1));
 					r+=("^");
 					r+=(l.getSymbol(i+2));

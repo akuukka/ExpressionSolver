@@ -184,7 +184,7 @@ namespace AK
 						{
 							var funcSymbol = symbolList[i-1];
 							switch (funcSymbol.type) {
-								case SymbolType.FuncPow:
+								case SymbolType.Pow:
 								{
 									var rhs = GetSymbolValue(symbolList[i+1]);
 									value = System.Math.Pow(value,rhs);
@@ -232,7 +232,7 @@ namespace AK
 					case SymbolType.OperatorAdd:
 						prevOper = s.type;
 						break;
-					case SymbolType.FuncPow:
+					case SymbolType.Pow:
 					case SymbolType.FuncCustom:
 						transformNextValue = true;
 						break;
@@ -281,7 +281,7 @@ namespace AK
 					}
 					else
 					{
-						newSubExpression.Append(new Symbol(SymbolType.FuncPow));
+						newSubExpression.Append(new Symbol(SymbolType.Pow));
 						newSubExpression.Append(lhs);
 						newSubExpression.Append(rhs);
 					}
