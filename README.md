@@ -3,15 +3,13 @@ A C# mathematical expression solver with Unity3D compatibility
 
 Usage:
 
-The basic use cases:
-
     AK.ExpressionSolver solver = new AK.ExpressionSolver();
     var exp = solver.SymbolicateExpression("1+1");
     var result = exp.Evaluate(); // Returns 2.0
     solver.EvaluateExpression("1+1"); // Also returns 2.0
 
-
-Expression is symbolicated only once: subsequent calls to Evaluate are fast.
+Expression is symbolicated only once: subsequent calls to Evaluate are fast. If you are going to evaluate the expression only once,
+you can do without Expression objects and just call solver.EvaluateExpression(string formula) like we did in the example above.
 
 There are two kinds of variables: global and expression-local. Global variables
 are shared between all Expressions created using the same parser object:
@@ -64,8 +62,8 @@ You can override the default policy:
 			test3.value = System.Math.PI/2;
 			AssertSameValue(exp3.Evaluate(),1);
 
-There are two ways to change values stored in variable. You can of course use the solver.SetGlobalVariable/exp.SetVariable functions,
-used in above examples. If you want to do a huge number of evaluations, you may want to use solver.GetGlobalVariable/exp.GetVariable to
+There are two ways to change values stored in a variable. You can of course use the solver.SetGlobalVariable/exp.SetVariable functions 
+as in the above examples. If you want to do a huge number of evaluations, you may want to use solver.GetGlobalVariable/exp.GetVariable to
 get reference to the variable. With the reference, you can change the value without using hash tables:
 
 			const int N = 1000000;
@@ -87,9 +85,9 @@ get reference to the variable. With the reference, you can change the value with
 			}
 			AssertSameValue(sum,2);
 
-On my laptop, the latter loop was around 33% faster than the former.
+On my laptop, the latter loop was around 25% faster than the former.
 
-Custom functions are also supported:
+Custom functions that take up to 4 parameters are also supported:
 
     solver.AddCustomFunction("Rnd",2, delegate(double[] p) {
         return UnityEngine.Random.Range(p[0],p[1]);
