@@ -57,27 +57,27 @@ namespace AK
 		public ExpressionSolver()
 		{
 			undefinedVariablePolicy = UndefinedVariablePolicy.Error;
-			AddCustomFunction("sin",1, delegate(double[] p) { return System.Math.Sin(p[0]);	});
-			AddCustomFunction("cos",1, delegate(double[] p) { return System.Math.Cos(p[0]);	});
-			AddCustomFunction("tan",1, delegate(double[] p) { return System.Math.Tan(p[0]);	});
-			AddCustomFunction("abs",1, delegate(double[] p) { return System.Math.Abs(p[0]);	});
-			AddCustomFunction("asin",1, delegate(double[] p) { return System.Math.Asin(p[0]); });
-			AddCustomFunction("acos",1, delegate(double[] p) { return System.Math.Acos(p[0]); });
-			AddCustomFunction("atan",1, delegate(double[] p) { return System.Math.Atan(p[0]); });
+			AddCustomFunction("sin", delegate(double p) { return System.Math.Sin(p); });
+			AddCustomFunction("cos", delegate(double p) { return System.Math.Cos(p); });
+			AddCustomFunction("tan", delegate(double p) { return System.Math.Tan(p); });
+			AddCustomFunction("abs", delegate(double p) { return System.Math.Abs(p); });
+			AddCustomFunction("asin", delegate(double p) { return System.Math.Asin(p); });
+			AddCustomFunction("acos", delegate(double p) { return System.Math.Acos(p); });
+			AddCustomFunction("atan", delegate(double p) { return System.Math.Atan(p); });
 			AddCustomFunction("atan2",2, delegate(double[] p) {	return System.Math.Atan2(p[0],p[1]); });
-			AddCustomFunction("sqrt",1, delegate(double[] p) { return System.Math.Sqrt(p[0]); });
-			AddCustomFunction("sign",1, delegate(double[] p) { return System.Math.Sign(p[0]); });
-			AddCustomFunction("floor",1, delegate(double[] p) { return System.Math.Floor(p[0]); });
-			AddCustomFunction("ceil",1, delegate(double[] p) { return System.Math.Ceiling(p[0]); });
+			AddCustomFunction("sqrt", delegate(double p) { return System.Math.Sqrt(p); });
+			AddCustomFunction("sign", delegate(double p) { return System.Math.Sign(p); });
+			AddCustomFunction("floor", delegate(double p) { return System.Math.Floor(p); });
+			AddCustomFunction("ceil", delegate(double p) { return System.Math.Ceiling(p); });
 			AddCustomFunction("min",2, delegate(double[] p) { return System.Math.Min(p[0],p[1]); });
 			AddCustomFunction("max",2, delegate(double[] p) { return System.Math.Max(p[0],p[1]); });
-			AddCustomFunction("sinh",1, delegate(double[] p) { return System.Math.Sinh(p[0]); });
-			AddCustomFunction("exp",1, delegate(double[] p) { return System.Math.Exp(p[0]); });
-			AddCustomFunction("cosh",1, delegate(double[] p) { return System.Math.Cosh(p[0]); });
-			AddCustomFunction("tanh",1, delegate(double[] p) { return System.Math.Tanh(p[0]); });
-			AddCustomFunction("log",1, delegate(double[] p) { return System.Math.Log(p[0]); });
-			AddCustomFunction("log10",1, delegate(double[] p) { return System.Math.Log10(p[0]); });
-			AddCustomFunction("round",1, delegate(double[] p) { return System.Math.Round(p[0]); });
+			AddCustomFunction("sinh", delegate(double p) { return System.Math.Sinh(p); });
+			AddCustomFunction("exp", delegate(double p) { return System.Math.Exp(p); });
+			AddCustomFunction("cosh", delegate(double p) { return System.Math.Cosh(p); });
+			AddCustomFunction("tanh", delegate(double p) { return System.Math.Tanh(p); });
+			AddCustomFunction("log", delegate(double p) { return System.Math.Log(p); });
+			AddCustomFunction("log10", delegate(double p) { return System.Math.Log10(p); });
+			AddCustomFunction("round", delegate(double p) { return System.Math.Round(p); });
 		}
 		
 		public void AddCustomFunction(string name, int paramCount, System.Func<double[],double> func, bool isRandom = false)
@@ -87,6 +87,11 @@ namespace AK
 				throw new ESTooManyParametersException("Custom functions can have no more than " + MaxCustomFunctionParamCount + " parameters");
 			}
 			customFuncs[name] = new CustomFunction(name, paramCount, func, isRandom);
+		}
+
+		public void AddCustomFunction(string name, System.Func<double,double> func, bool isRandom = false)
+		{
+			customFuncs[name] = new CustomFunction(name, func, isRandom);
 		}
 
 		public void RemoveCustomFunction(string name)
@@ -194,14 +199,21 @@ namespace AK
 								case SymbolType.FuncCustom:
 								{
 									var customFunc = (CustomFunction)funcSymbol.ptr;
-									double[] p = new double[MaxCustomFunctionParamCount];
-									p[0] = value;
-									for (int g=1;g<customFunc.paramCount;g++)
+									if (customFunc.paramCount == 1)
 									{
-										p[g] = GetSymbolValue(symbolList[i+1]);
-										i++;
+										value = customFunc.Invoke(value);
 									}
-									value = customFunc.func(p);
+									else
+									{
+										double[] p = new double[MaxCustomFunctionParamCount];
+										p[0] = value;
+										for (int g=1;g<customFunc.paramCount;g++)
+										{
+											p[g] = GetSymbolValue(symbolList[i+1]);
+											i++;
+										}
+										value = customFunc.Invoke(p);
+									}
 									break;
 								}
 								default:
