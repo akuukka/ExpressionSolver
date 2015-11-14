@@ -23,8 +23,7 @@ are shared between all Expressions created using the same parser object:
     AssertSameValue(3.0,exp2.Evaluate());
     AssertSameValue(exp1.Evaluate(),exp2.Evaluate());
 
-This can be problematic in a multithreaded environment. Therefore, ExpressionSolver
-also provides expression-local variables:
+This can be problematic in a multithreaded environment. Therefore, ExpressionSolver also provides expression-local variables:
 
 	ExpressionSolver solver = new ExpressionSolver();
 	var exp1 = solver.SymbolicateExpression("test+1",new string[]{"test"});
@@ -95,7 +94,7 @@ Custom functions that take up to 4 parameters are also supported:
 If you pass a constant value to a custom function, then the function is evaluated at symbolication time. Therefore, the following loop
 runs very fast:
 
-    var exp = solver.SymbolicateExpression("sin(cos(tan(31232^321)))");
+    var exp = solver.SymbolicateExpression("sin(cos(tan(312^3)))");
     for (int i=0;i<10000;i++)
         exp.Evaluate();
 
