@@ -19,9 +19,45 @@ namespace AK
 	{
 		public SymbolType type;
 		public double _value;
-		public Variable variable;
-		public SymbolList subExpression;
-		public CustomFunction customFunc;
+		public object ptr;
+
+		public Variable variable 
+		{ 
+			get { 
+				return (Variable)ptr;
+			}
+
+			set
+			{ 
+				ptr = value;
+			}
+		}
+
+		public SymbolList subExpression 
+		{ 
+			get
+			{ 
+				return (SymbolList)ptr;
+			} 
+
+			set
+			{
+				ptr = value;
+			} 
+		}
+
+		public CustomFunction customFunc 
+		{ 
+			get 
+			{ 
+				return (CustomFunction)ptr;
+			} 
+
+			set
+			{
+				ptr = value;
+			} 
+		}
 
 		// Test if value of the symbol is independent of variables.
 		public bool IsImmutableConstant()
@@ -106,16 +142,14 @@ namespace AK
 		{
 			type = o.type;
 			_value = o._value;
-			variable = o.variable;
-			subExpression = o.subExpression;
-			customFunc = o.customFunc;
+			ptr = o.ptr;
 		}
 		
 		public double value 
 		{
 			get
 			{
-				return variable == null ? _value : variable.value;
+				return variable == null ? _value : ((Variable)ptr).value;
 			}
 		}
 		
@@ -134,18 +168,20 @@ namespace AK
 			this.type = type;
 		}
 
-		public Symbol(SymbolList subExpression) {
+		public Symbol(SymbolList subExpression)
+		{
 			this.type = SymbolType.SubExpression;
 			this.subExpression = subExpression;
 		}
 		
-		public Symbol(double value) {
+		public Symbol(double value)
+		{
 			type = SymbolType.Value;
 			_value = value;
-			variable = null;
 		}
 		
-		public Symbol(Variable ptrToConstValue) {
+		public Symbol(Variable ptrToConstValue)
+		{
 			type = SymbolType.Value;
 			variable = ptrToConstValue;
 		}
@@ -158,7 +194,8 @@ namespace AK
 		
 		public override string ToString()
 		{
-			switch (type) {
+			switch (type) 
+			{
 				case SymbolType.Value:
 					if (variable != null)
 					{

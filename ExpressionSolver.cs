@@ -193,7 +193,7 @@ namespace AK
 								}
 								case SymbolType.FuncCustom:
 								{
-									var customFunc = funcSymbol.customFunc;
+									var customFunc = (CustomFunction)funcSymbol.ptr;
 									double[] p = new double[MaxCustomFunctionParamCount];
 									p[0] = value;
 									for (int g=1;g<customFunc.paramCount;g++)
@@ -246,13 +246,7 @@ namespace AK
 
 		public static double GetSymbolValue(Symbol s) 
 		{
-			if (s.type == SymbolType.Value)
-			{
-				return s.value;
-			}
-			var syms = s.subExpression;
-			double value = ParseSymbols(syms);
-			return value;
+			return (s.type == SymbolType.Value) ? (s.ptr == null ? s.value : ((Variable)s.ptr).value ) : ParseSymbols((SymbolList)s.ptr);
 		}
 
 		Symbol SymbolicateValue(string formula, int begin, int end, Expression exp)
