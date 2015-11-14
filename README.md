@@ -86,10 +86,16 @@ get reference to the variable. With the reference, you can change the value with
 
 On my laptop, the latter loop was around 25% faster than the former.
 
-Custom functions that take up to 4 parameters are also supported:
 
-    solver.AddCustomFunction("average",2, delegate(double[] p) { return 0.5*(p[0]+p[1]); });
-    solver.AddCustomFunction("inverse",1, delegate(double[] p) { return 1.0/p[0]; });
+Custom functions that take up to 4 parameters are also supported. If the function takes only one parameter, this is how you define
+the function:
+
+    solver.AddCustomFunction("inverse",delegate(double p) { return 1.0/p; });
+
+Functions with multiple parameters take their input as an array of doubles. Remember to give also the number of parameters your function
+expects:
+
+    solver.AddCustomFunction("average", 2, delegate(double[] p) { return 0.5*(p[0]+p[1]); });
 
 If you pass a constant value to a custom function, then the function is evaluated at symbolication time. Therefore, the following loop
 runs very fast:
