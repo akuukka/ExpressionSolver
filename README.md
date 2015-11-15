@@ -148,7 +148,7 @@ Custom functions can also accept string parameters. Parameters to these function
 String functions are never evaluated at symbolication time. Therefore, therefore you don't to specify whether the function returns random
 values or not.
 
-Escape character inside the string literal is \. To insert that inside a C# string literal, you of course need to enter it twice:
+Escape character inside the string literal is backslash. To insert that inside a C# string literal, you of course need to enter it twice:
 
     var exp2 = solver.SymbolicatExpression("strlen('\\'')");
     double len = exp2.Evaluate(); // Returns 1.0, the length of "'"
