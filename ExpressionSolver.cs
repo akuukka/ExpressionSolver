@@ -89,6 +89,15 @@ namespace AK
 			customFuncs[name] = new CustomFunction(name, paramCount, func, isRandom);
 		}
 
+		public void AddCustomFunction(string name, int paramCount, System.Func<object[],double> func)
+		{
+			if (paramCount>MaxCustomFunctionParamCount)
+			{
+				throw new ESTooManyParametersException("Custom functions can have no more than " + MaxCustomFunctionParamCount + " parameters");
+			}
+			customFuncs[name] = new CustomFunction(name, paramCount, func, true);
+		}
+
 		public void AddCustomFunction(string name, System.Func<double,double> func, bool isRandom = false)
 		{
 			customFuncs[name] = new CustomFunction(name, func, isRandom);
@@ -149,8 +158,9 @@ namespace AK
 					newExpression.SetVariable(localVariableName.Trim(),0.0);
 				}
 			}
-			// Remove white space
-			formula = formula.Replace(" ",string.Empty).Replace("\n",string.Empty).Replace("\t",string.Empty).Replace("\r",string.Empty);
+
+			formula = SolverTools.RemoveWhiteSpace(formula);
+
 			// Check validity
 			try {
 				ValidityChecker.CheckValidity(formula);
@@ -183,8 +193,9 @@ namespace AK
 				{
 					case SymbolType.Value:
 					case SymbolType.SubExpression:
+					case SymbolType.String:
 					{
-						double value = GetSymbolValue(s);
+						double value = s.type != SymbolType.String ? GetSymbolValue(s) : 0;
 						if (transformNextValue) 
 						{
 							var funcSymbol = symbolList[i-1];
@@ -199,9 +210,20 @@ namespace AK
 								case SymbolType.FuncCustom:
 								{
 									var customFunc = (CustomFunction)funcSymbol.ptr;
-									if (customFunc.paramCount == 1)
+									if (customFunc.paramCount == 1 && customFunc.func1d != null)
 									{
 										value = customFunc.Invoke(value);
+									}
+									else if (customFunc.funcmo != null)
+									{
+										object[] p = new object[MaxCustomFunctionParamCount];
+										p[0] = s.type != SymbolType.String ? (object)GetSymbolValue(s) : (object)s.stringValue;
+										for (int g=1;g<customFunc.paramCount;g++)
+										{
+											p[g] = symbolList[i+1].type != SymbolType.String ? (object)GetSymbolValue(symbolList[i+1]) : (object)symbolList[i+1].stringValue;
+											i++;
+										}
+										value = customFunc.Invoke(p);
 									}
 									else
 									{
@@ -264,7 +286,17 @@ namespace AK
 		Symbol SymbolicateValue(string formula, int begin, int end, Expression exp)
 		{
 			if (formula[begin] == '+')
+			{
 				begin++;
+			}
+
+			// Check for string value
+			if (formula[begin] == '\'' && formula[end - 1] == '\'')
+			{
+				var svalue = formula.Substring(begin+1,end-begin-2).Replace("\\'","'");
+				return new Symbol(svalue);
+			}
+
 			int depth=0;
 			for (int k = begin; k < end; k++)
 			{
@@ -499,7 +531,7 @@ namespace AK
 			// Check if the final monome is just a real number, in which case we don't have to return a subexpression type
 			if (symbols.Length == 1 && symbols.first.IsImmutableConstant())
 			{
-				return new Symbol(symbols.first.value);
+				return symbols.first.type == SymbolType.Value ? symbols.first : new Symbol(GetSymbolValue(symbols.first));
 			}
 			Symbol s = new Symbol(SymbolType.SubExpression);
 			s.subExpression = symbols;
@@ -602,13 +634,12 @@ namespace AK
 				{
 					var subExpression = s.subExpression;
 					int subExpressionLength = subExpression.Length;
-					for (int k=0;k<subExpressionLength;k++)
+					s.CopyValuesFrom(subExpression.first);
+					for (int k=1;k<subExpressionLength;k++)
 					{
 						symbols.InsertBefore(j+k,subExpression.getSymbol(k));
 					}
 					j += subExpressionLength;
-					symbols.symbols.RemoveAt (j);
-					j--;
 				}
 			}
 			

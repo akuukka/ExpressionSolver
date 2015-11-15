@@ -12,8 +12,9 @@ namespace AK {
 			{'/',")0123456789abcdefghijklmnopqrstuvxyzABCDEFGHIJKLMNOPQRSTUVXYZ_" },
 			{'^',")0123456789abcdefghijklmnopqrstuvxyzABCDEFGHIJKLMNOPQRSTUVXYZ_" },
 			{'*',")0123456789abcdefghijklmnopqrstuvxyzABCDEFGHIJKLMNOPQRSTUVXYZ_" },
-			{')',")0123456789abcdefghijklmnopqrstuvxyzABCDEFGHIJKLMNOPQRSTUVXYZ_" },
-			{'(',"*-+^/(0123456789abcdefghijklmnopqrstuvxyzABCDEFGHIJKLMNOPQRSTUVXYZ_" }
+			{')',"\')0123456789abcdefghijklmnopqrstuvxyzABCDEFGHIJKLMNOPQRSTUVXYZ_" },
+			{'(',"*-+^/(0123456789abcdefghijklmnopqrstuvxyzABCDEFGHIJKLMNOPQRSTUVXYZ_" },
+			{'\'',",(" }
 		};
 
 		private static bool CanPrecede(char l, char r)
@@ -55,6 +56,8 @@ namespace AK {
 				return true;
 			if (c == '-')
 				return true;
+			if (c == '\'')
+				return true;
 			if (c == '+')
 				return true;
 			if (c >= 'a' && c <='z')
@@ -68,15 +71,26 @@ namespace AK {
 
 		public static void CheckValidity(string expression)
 		{
+			bool inStringParam = false;
 			int parenthesisDepth = 0;
 			int l = expression.Length;
 			for (int i=0;i<l;i++)
 			{
 				var x = expression[i];
+				if (inStringParam)
+				{
+					if (x != '\'' || (x == '\'' && expression[i-1] == '\\'))
+					{
+						continue;
+					}
+				}
 				switch (x) {
 					case '(':
 						parenthesisDepth++;
-						if (i>0 && !CanPrecede(expression[i-1],expression[i])) {
+						if (i>0 && !CanPrecede(expression[i-1],expression[i])) 
+						{
+							UnityEngine.Debug.Log(expression[i]);
+							UnityEngine.Debug.Log(expression[i-1]);
 							ThrowSyntaxErrorAt(expression,i);
 						}
 						break;
@@ -117,6 +131,23 @@ namespace AK {
 							ThrowSyntaxErrorAt(expression,i);
 						}
 						break;
+					case '\'':
+						if (!inStringParam)
+						{
+							if (i == 0 || (i>0 && !CanPrecede(expression[i-1],expression[i])))
+							{
+								ThrowSyntaxErrorAt(expression,i);
+							}
+						}
+						else
+						{
+							if (i < l-1 && (expression[i+1] != ')' && expression[i+1] != ','))
+							{
+								ThrowSyntaxErrorAt(expression,i);
+							}
+						}
+						inStringParam = !inStringParam;
+						break;
 					case '.':
 						if (i==l-1)
 							ThrowSyntaxErrorAt(expression,i);
@@ -137,6 +168,9 @@ namespace AK {
 			}
 			if (parenthesisDepth > 0) {
 				throw new ESSyntaxErrorException("Parenthesis mismatch.");
+			}
+			if (inStringParam) {
+				throw new ESSyntaxErrorException("String parameter not ending.");
 			}
 		}
 

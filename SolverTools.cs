@@ -15,6 +15,41 @@ namespace AK {
 				this.second = second;
 			}
 		}
+
+		private static bool IsWhiteSpaceChar(char c)
+		{
+			return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+		}
+
+		public static string RemoveWhiteSpace(string formula)
+		{
+			string r = "";
+			int l = formula.Length;
+			for (int i=0;i<l;i++)
+			{
+				char c = formula[i];
+				if (c=='\'')
+				{
+					r += c;
+					for (int j=i+1;j<l;j++) 
+					{
+						char d = formula[j];
+						if (d=='\'' && formula[j-1] != '\\')
+						{
+							i++;
+							break;
+						}
+						i++;
+						r += d;
+					}
+				}
+				if (!IsWhiteSpaceChar(c))
+				{
+					r += c;
+				}
+			}
+			return r;
+		}
 		
 		public static List<IntPair> ParseParameters(string formula, int begin, int end) 
 		{

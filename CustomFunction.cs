@@ -5,6 +5,7 @@
 	{
 		public string name;
 		public System.Func<double[],double> funcmd;
+		public System.Func<object[],double> funcmo;
 		public System.Func<double,double> func1d;
 		public int paramCount;
 		public bool isRandom;
@@ -12,6 +13,14 @@
 		public CustomFunction(string name, int paramCount, System.Func<double[],double> func, bool isRandom)
 		{
 			this.funcmd = func;
+			this.isRandom = isRandom;
+			this.paramCount = paramCount;
+			this.name = name;
+		}
+
+		public CustomFunction(string name, int paramCount, System.Func<object[],double> func, bool isRandom)
+		{
+			this.funcmo = func;
 			this.isRandom = isRandom;
 			this.paramCount = paramCount;
 			this.name = name;
@@ -28,6 +37,11 @@
 		public double Invoke(double[] p)
 		{
 			return funcmd(p);
+		}
+
+		public double Invoke(object[] p)
+		{
+			return funcmo(p);
 		}
 
 		public double Invoke(double x)

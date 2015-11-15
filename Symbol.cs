@@ -12,6 +12,7 @@ namespace AK
 		OperatorDivide,
 		SubExpression,
 		Pow,
+		String,
 		FuncCustom,
 	};
 	
@@ -27,6 +28,18 @@ namespace AK
 				return (Variable)ptr;
 			}
 
+			set
+			{ 
+				ptr = value;
+			}
+		}
+
+		public string stringValue 
+		{ 
+			get { 
+				return (string)ptr;
+			}
+			
 			set
 			{ 
 				ptr = value;
@@ -115,6 +128,10 @@ namespace AK
 					// We have single real number surrounded by parenthesis, it can become a real number
 					CopyValuesFrom(subExpression.first);
 				}
+				else if (subExpression.Length == 1 && subExpression.first.type == SymbolType.String)
+				{
+					CopyValuesFrom(subExpression.first);
+				}
 			}
 		}
 		
@@ -131,6 +148,10 @@ namespace AK
 					}
 				}
 				else if (l.getSymbol(k).type == SymbolType.FuncCustom && l.getSymbol(k).customFunc.isRandom)
+				{
+					return false;
+				}
+				else if (l.getSymbol(k).type == SymbolType.String)
 				{
 					return false;
 				}
@@ -186,6 +207,12 @@ namespace AK
 			type = SymbolType.Value;
 			_value = value;
 		}
+
+		public Symbol(string stringValue)
+		{
+			type = SymbolType.String;
+			ptr = stringValue;
+		}
 		
 		public Symbol(Variable ptrToConstValue)
 		{
@@ -211,6 +238,8 @@ namespace AK
 					return _value.ToString();
 				case SymbolType.OperatorAdd:
 					return "+";
+				case SymbolType.String:
+					return "\'" + stringValue + "\'";
 				case SymbolType.OperatorMultiply:
 					return "*";
 				case SymbolType.OperatorDivide:

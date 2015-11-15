@@ -136,6 +136,52 @@ Some examples:
     var exp4 = solver.SymbolicateExpression("sqrt(2)-2^0.5");
     AssertSameValue(exp4.Evaluate(),0);
 
+Custom functions can also accept string parameters. Parameters to these functions are passed as an array of C# objects. For example:
+
+    ExpressionSolver solver = new ExpressionSolver();
+    solver.AddCustomFunction("strlen",1, delegate(object[] p) {
+		return ((string)p[0]).Length;
+	});
+    var exp1 = solver.SymbolicatExpression("strlen('1234')");
+    double len = exp1.Evaluate(); // Returns 4.0
+
+String functions are never evaluated at symbolication time. Therefore, therefore you don't to specify whether the function returns random
+values or not.
+
+Escape character inside the string literal is \. To insert that inside a C# string literal, you of course need to enter it twice:
+
+    var exp2 = solver.SymbolicatExpression("strlen('\\'')");
+    double len = exp2.Evaluate(); // Returns 1.0, the length of "'"
+
+String functions make it easy to access your Unity scene from ExpressionSolver formulas. For example:
+
+    solver.AddCustomFunction("distBetweenGameObjects",2, delegate(object[] p) {
+		var go1 = UnityEngine.GameObject.Find((string)p[0]);
+        var go2 = UnityEngine.GameObject.Find((string)p[1]);
+        if (go1 != null && go2 != null)
+        {
+            return UnityEngine.Vector3.Distance(go1.transform.position,go2.transform.position);
+        }
+        else
+        {
+            return -1.0;
+        }
+	});
+    var dist = ExpressionSolver.EvaluateExpression("distBetweenGameObjects('GameObject1','GameObject2')");
+
+You can also combine string and double parameters:
+
+    solver.AddCustomFunction("strnlen()",2, delegate(object[] p) {
+        return System.Math.Min((double)((string)p[0]).Length,System.Math.Round(p)((double)p[1]));
+	});
+
+Strings can only appear as parameters to string accepting functions and string concatenation is not currently supported.
+
+    solver.EvaluateExpression("'abba'"); // Error: strings can not appear as independent values
+    solver.EvaluateExpression("strlen('ab'+'ba'"); // Error: no string concatenation
+
+
+
 Have fun with ExpressionSolver!
 
 

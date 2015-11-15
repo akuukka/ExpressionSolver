@@ -14,6 +14,15 @@ namespace AK
 			}
 		}
 
+		public static void AssertSameValue(string s1, string s2)
+		{
+			if (s1 != s2)
+			{
+				UnityEngine.Debug.Log(s1 + " vs " + s2);
+				throw new System.Exception("ExpressionSolverTest failed");
+			}
+		}
+
 		public static void Run()
 		{
 			TestGlobalConstants();
@@ -21,6 +30,57 @@ namespace AK
 			TestUndefinedVariablePolicies();
 			TestSum();
 			TestFuncs();
+			TestWhiteSpaceRemoval();
+			TestStringFuncs();
+		}
+
+		public static void TestStringFuncs()
+		{
+			ExpressionSolver solver = new ExpressionSolver();
+			solver.AddCustomFunction("strlen",1, delegate(object[] p) {
+				return ((string)p[0]).Length;
+			});
+			var exp = solver.SymbolicateExpression("strlen('123')");
+			AssertSameValue(exp.Evaluate(),3.0);
+			exp = solver.SymbolicateExpression("strlen('12\\'3')");
+			AssertSameValue(exp.Evaluate(),4.0);
+			exp = solver.SymbolicateExpression("strlen('12\\'3 4')");
+			AssertSameValue(exp.Evaluate(),6.0);
+			solver.AddCustomFunction("strlen2",2, delegate(object[] p) {
+				return ((string)p[0]).Length*(double)p[1];
+			});
+			exp = solver.SymbolicateExpression("strlen2('12\\'3 4',2.5)");
+			AssertSameValue(exp.Evaluate(),6.0*2.5);
+
+			string[] erroneousStrings = new string[]{"strlen(''')","strlen('''')","''"};
+			foreach (var errorString in erroneousStrings)
+			{
+				try 
+				{
+					exp = solver.SymbolicateExpression(errorString);
+					throw new System.Exception("ExpressionSolverTest failed");
+				}
+				catch (ESSyntaxErrorException)
+				{
+					// Parameters were not given correctly - syntax error expected
+				}
+				catch (System.Exception)
+				{
+					throw new System.Exception("ExpressionSolverTest failed");
+				}
+			}
+		}
+
+		public static void TestWhiteSpaceRemoval()
+		{
+			string formula = "ab cd";
+			AssertSameValue(SolverTools.RemoveWhiteSpace(formula),"abcd");
+			formula = "'ab cd'";
+			AssertSameValue(SolverTools.RemoveWhiteSpace(formula),"'ab cd'");
+			formula = " 'ab cd' ";
+			AssertSameValue(SolverTools.RemoveWhiteSpace(formula),"'ab cd'");
+			formula = " 'ab\\' cd ' ";
+			AssertSameValue(SolverTools.RemoveWhiteSpace(formula),"'ab\\' cd '");
 		}
 
 		public static void TestFuncs()
@@ -37,6 +97,33 @@ namespace AK
 			AssertSameValue(exp4.Evaluate(),0);
 			var exp5 = solver.SymbolicateExpression("exp(log(6))");
 			AssertSameValue(exp5.Evaluate(),6);
+			solver.AddCustomFunction("Rnd1",2, delegate(double[] p) {
+				return p[0] + (p[1]-p[0])*(new System.Random().NextDouble());
+			},true);
+			var exp6 = solver.SymbolicateExpression("Rnd1(0,1)");
+			var firstRnd = exp6.Evaluate();
+			int iter = 0;
+			while (iter < 0)
+			{
+				var secondRnd = exp6.Evaluate();
+				if (firstRnd != secondRnd)
+				{
+					break;
+				}
+				iter++;
+				if (iter==10000)
+				{
+					// Probability of this happening is miniscule if everything works as it should
+					throw new System.Exception("ExpressionSolverTest failed");
+				}
+			}
+			solver.AddCustomFunction("Rnd2",2, delegate(double[] p) {
+				return p[0] + (p[1]-p[0])*(new System.Random().NextDouble());
+			},false);
+			var exp7 = solver.SymbolicateExpression("Rnd2(0,1)");
+			AssertSameValue(exp7.Evaluate(),exp7.Evaluate());
+			var exp8 = solver.SymbolicateExpression("cos(0)+1*2");
+			AssertSameValue(exp8.Evaluate(),3);
 		}
 
 		public static void TestSum()
