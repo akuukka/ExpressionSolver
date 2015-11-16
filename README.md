@@ -23,7 +23,8 @@ are shared between all Expressions created using the same parser object:
     AssertSameValue(3.0,exp2.Evaluate());
     AssertSameValue(exp1.Evaluate(),exp2.Evaluate());
 
-This can be problematic in a multithreaded environment. Therefore, ExpressionSolver also provides expression-local variables:
+This can be problematic in a multithreaded environment. Therefore, ExpressionSolver also provides expression-local variables that you can
+specify when calling SymbolicateExpression:
 
 	ExpressionSolver solver = new ExpressionSolver();
 	var exp1 = solver.SymbolicateExpression("test+1",new string[]{"test"});
@@ -171,12 +172,22 @@ You can also combine string and double parameters:
     solver.AddCustomFunction("strnlen()",2, delegate(object[] p) {
         return System.Math.Min((double)((string)p[0]).Length,System.Math.Round(p)((double)p[1]));
 	});
+    
+Both global and expression-local variables can also assume string values. When using expression-local string variables, add a dollar
+sign before the variable when calling SymbolicateExpression:
+
+	solver.SetGlobalVariable("stringvar","12345");
+	exp = solver.SymbolicateExpression("strlen(stringvar)");
+    AssertSameValue(exp.Evaluate(),5);
+    exp2 = solver.SymbolicateExpression("strlen(stringvar2)","$stringvar2");
+    exp2.SetVariable("stringvar2","stringtest");
+    AssertSameValue(exp2.Evaluate(),10);
+    
 
 Strings can only appear as parameters to string accepting functions and string concatenation is not currently supported.
 
     solver.EvaluateExpression("'abba'"); // Error: strings can not appear as independent values
     solver.EvaluateExpression("strlen('ab'+'ba'"); // Error: no string concatenation
-
 
 Have fun with ExpressionSolver!
 
