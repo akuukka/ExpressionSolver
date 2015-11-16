@@ -8,28 +8,28 @@
 		public System.Func<object[],double> funcmo;
 		public System.Func<double,double> func1d;
 		public int paramCount;
-		public bool isRandom;
+		public bool enableSymbolicationTimeEvaluation;
 		
-		public CustomFunction(string name, int paramCount, System.Func<double[],double> func, bool isRandom)
+		public CustomFunction(string name, int paramCount, System.Func<double[],double> func, bool enableSymbolicationTimeEvaluation)
 		{
 			this.funcmd = func;
-			this.isRandom = isRandom;
+			this.enableSymbolicationTimeEvaluation = enableSymbolicationTimeEvaluation;
 			this.paramCount = paramCount;
 			this.name = name;
 		}
 
-		public CustomFunction(string name, int paramCount, System.Func<object[],double> func, bool isRandom)
+		public CustomFunction(string name, int paramCount, System.Func<object[],double> func, bool enableSymbolicationTimeEvaluation)
 		{
 			this.funcmo = func;
-			this.isRandom = isRandom;
+			this.enableSymbolicationTimeEvaluation = enableSymbolicationTimeEvaluation;
 			this.paramCount = paramCount;
 			this.name = name;
 		}
 
-		public CustomFunction(string name, System.Func<double,double> func, bool isRandom)
+		public CustomFunction(string name, System.Func<double,double> func, bool enableSymbolicationTimeEvaluation)
 		{
 			this.func1d = func;
-			this.isRandom = isRandom;
+			this.enableSymbolicationTimeEvaluation = enableSymbolicationTimeEvaluation;
 			this.paramCount = 1;
 			this.name = name;
 		}

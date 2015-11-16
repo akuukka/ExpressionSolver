@@ -23,15 +23,23 @@ namespace AK
 			}
 		}
 
+		public static void Assert(bool cond)
+		{
+			if (!cond)
+			{
+				throw new System.Exception("ExpressionSolverTest failed");
+			}
+		}
+
 		public static void Run()
 		{
+			TestStringFuncs();
 			TestGlobalConstants();
 			TestExpLocalConstants();
 			TestUndefinedVariablePolicies();
 			TestSum();
 			TestFuncs();
 			TestWhiteSpaceRemoval();
-			TestStringFuncs();
 		}
 
 		public static void TestStringFuncs()
@@ -39,7 +47,7 @@ namespace AK
 			ExpressionSolver solver = new ExpressionSolver();
 			solver.AddCustomFunction("strlen",1, delegate(object[] p) {
 				return ((string)p[0]).Length;
-			});
+			},true);
 			var exp = solver.SymbolicateExpression("strlen('123')");
 			AssertSameValue(exp.Evaluate(),3.0);
 			exp = solver.SymbolicateExpression("strlen('12\\'3')");
@@ -69,6 +77,38 @@ namespace AK
 					throw new System.Exception("ExpressionSolverTest failed");
 				}
 			}
+
+			// Because strlen should be evaluated at symbolication time, the following should reduce to one real value symbol:
+			exp = solver.SymbolicateExpression("strlen('123')+1");
+			Assert(exp.root.type == SymbolType.RealValue);
+			AssertSameValue(exp.root.value,4);
+			// But if one of the parameters is not constant, then we cant do it:
+			exp = solver.SymbolicateExpression("strlen('123')+x", new string[]{"x"});
+			Assert(exp.root.type == SymbolType.SubExpression);
+
+			// Test string variables. Both exp-local and global
+			exp = solver.SymbolicateExpression("strlen(stringVariableTest)","$stringVariableTest");
+			exp.SetVariable("stringVariableTest","test");
+			AssertSameValue(exp.Evaluate(),4);
+			try
+			{
+				exp.SetVariable("stringVariableTest",121);
+				Assert(false);
+			}
+			catch (ESParameterTypeChangedException)
+			{
+			}
+			solver.SetGlobalVariable("striva","123");
+			exp = solver.SymbolicateExpression("strlen( (  striva  )  )/3");
+			AssertSameValue(exp.Evaluate(),1);
+			try
+			{
+				solver.SetGlobalVariable("striva",42141.0);
+				Assert(false);
+			}
+			catch (ESParameterTypeChangedException)
+			{
+			}
 		}
 
 		public static void TestWhiteSpaceRemoval()
@@ -97,13 +137,14 @@ namespace AK
 			AssertSameValue(exp4.Evaluate(),0);
 			var exp5 = solver.SymbolicateExpression("exp(log(6))");
 			AssertSameValue(exp5.Evaluate(),6);
+			var rnd = new System.Random();
 			solver.AddCustomFunction("Rnd1",2, delegate(double[] p) {
-				return p[0] + (p[1]-p[0])*(new System.Random().NextDouble());
-			},true);
+				return p[0] + (p[1]-p[0])*(rnd.NextDouble());
+			},false);
 			var exp6 = solver.SymbolicateExpression("Rnd1(0,1)");
 			var firstRnd = exp6.Evaluate();
 			int iter = 0;
-			while (iter < 0)
+			while (true)
 			{
 				var secondRnd = exp6.Evaluate();
 				if (firstRnd != secondRnd)
@@ -118,8 +159,8 @@ namespace AK
 				}
 			}
 			solver.AddCustomFunction("Rnd2",2, delegate(double[] p) {
-				return p[0] + (p[1]-p[0])*(new System.Random().NextDouble());
-			},false);
+				return p[0] + (p[1]-p[0])*(rnd.NextDouble());
+			},true);
 			var exp7 = solver.SymbolicateExpression("Rnd2(0,1)");
 			AssertSameValue(exp7.Evaluate(),exp7.Evaluate());
 			var exp8 = solver.SymbolicateExpression("cos(0)+1*2");
@@ -172,7 +213,6 @@ namespace AK
 			AssertSameValue(test3.value,0);
 			test3.value = System.Math.PI/2;
 			AssertSameValue(exp3.Evaluate(),1);
-
 		}
 
 		public static void TestGlobalConstants()

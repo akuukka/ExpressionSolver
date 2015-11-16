@@ -33,11 +33,11 @@ namespace AK
 					i+= s.customFunc.paramCount;
 				}
 					break;
-				case SymbolType.Value:
+				case SymbolType.RealValue:
 				case SymbolType.SubExpression:
 					r+=(s);
 					if (i<l.symbols.Count-1) {
-						if (l.getSymbol(i+1).IsValueType()) {
+						if (l.getSymbol(i+1).IsRealValueType()) {
 							r+=("*");
 						}
 					}

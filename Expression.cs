@@ -13,7 +13,28 @@ namespace AK
 			Variable v;
 			if (constants.TryGetValue(name,out v))
 			{
+				if (v.stringValue != null)
+				{
+					throw new ESParameterTypeChangedException("Can not change type of existing parameter " + name);
+				}
 				v.value = value;
+				return v;
+			}
+			v = new Variable(name,value);
+			constants.Add(name,v);
+			return v;
+		}
+
+		public Variable SetVariable(string name, string value)
+		{
+			Variable v;
+			if (constants.TryGetValue(name,out v))
+			{
+				if (v.stringValue == null)
+				{
+					throw new ESParameterTypeChangedException("Can not change type of existing parameter " + name);
+				}
+				v.stringValue = value;
 				return v;
 			}
 			v = new Variable(name,value);

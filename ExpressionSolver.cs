@@ -57,50 +57,50 @@ namespace AK
 		public ExpressionSolver()
 		{
 			undefinedVariablePolicy = UndefinedVariablePolicy.Error;
-			AddCustomFunction("sin", delegate(double p) { return System.Math.Sin(p); });
-			AddCustomFunction("cos", delegate(double p) { return System.Math.Cos(p); });
-			AddCustomFunction("tan", delegate(double p) { return System.Math.Tan(p); });
-			AddCustomFunction("abs", delegate(double p) { return System.Math.Abs(p); });
-			AddCustomFunction("asin", delegate(double p) { return System.Math.Asin(p); });
-			AddCustomFunction("acos", delegate(double p) { return System.Math.Acos(p); });
-			AddCustomFunction("atan", delegate(double p) { return System.Math.Atan(p); });
-			AddCustomFunction("atan2",2, delegate(double[] p) {	return System.Math.Atan2(p[0],p[1]); });
-			AddCustomFunction("sqrt", delegate(double p) { return System.Math.Sqrt(p); });
-			AddCustomFunction("sign", delegate(double p) { return System.Math.Sign(p); });
-			AddCustomFunction("floor", delegate(double p) { return System.Math.Floor(p); });
-			AddCustomFunction("ceil", delegate(double p) { return System.Math.Ceiling(p); });
-			AddCustomFunction("min",2, delegate(double[] p) { return System.Math.Min(p[0],p[1]); });
-			AddCustomFunction("max",2, delegate(double[] p) { return System.Math.Max(p[0],p[1]); });
-			AddCustomFunction("sinh", delegate(double p) { return System.Math.Sinh(p); });
-			AddCustomFunction("exp", delegate(double p) { return System.Math.Exp(p); });
-			AddCustomFunction("cosh", delegate(double p) { return System.Math.Cosh(p); });
-			AddCustomFunction("tanh", delegate(double p) { return System.Math.Tanh(p); });
-			AddCustomFunction("log", delegate(double p) { return System.Math.Log(p); });
-			AddCustomFunction("log10", delegate(double p) { return System.Math.Log10(p); });
-			AddCustomFunction("round", delegate(double p) { return System.Math.Round(p); });
+			AddCustomFunction("sin", delegate(double p) { return System.Math.Sin(p); },true);
+			AddCustomFunction("cos", delegate(double p) { return System.Math.Cos(p); },true);
+			AddCustomFunction("tan", delegate(double p) { return System.Math.Tan(p); },true);
+			AddCustomFunction("abs", delegate(double p) { return System.Math.Abs(p); },true);
+			AddCustomFunction("asin", delegate(double p) { return System.Math.Asin(p); },true);
+			AddCustomFunction("acos", delegate(double p) { return System.Math.Acos(p); },true);
+			AddCustomFunction("atan", delegate(double p) { return System.Math.Atan(p); },true);
+			AddCustomFunction("atan2",2, delegate(double[] p) {	return System.Math.Atan2(p[0],p[1]); },true);
+			AddCustomFunction("sqrt", delegate(double p) { return System.Math.Sqrt(p); },true);
+			AddCustomFunction("sign", delegate(double p) { return System.Math.Sign(p); },true);
+			AddCustomFunction("floor", delegate(double p) { return System.Math.Floor(p); },true);
+			AddCustomFunction("ceil", delegate(double p) { return System.Math.Ceiling(p); },true);
+			AddCustomFunction("min",2, delegate(double[] p) { return System.Math.Min(p[0],p[1]); },true);
+			AddCustomFunction("max",2, delegate(double[] p) { return System.Math.Max(p[0],p[1]); },true);
+			AddCustomFunction("sinh", delegate(double p) { return System.Math.Sinh(p); },true);
+			AddCustomFunction("exp", delegate(double p) { return System.Math.Exp(p); },true);
+			AddCustomFunction("cosh", delegate(double p) { return System.Math.Cosh(p); },true);
+			AddCustomFunction("tanh", delegate(double p) { return System.Math.Tanh(p); },true);
+			AddCustomFunction("log", delegate(double p) { return System.Math.Log(p); },true);
+			AddCustomFunction("log10", delegate(double p) { return System.Math.Log10(p); },true);
+			AddCustomFunction("round", delegate(double p) { return System.Math.Round(p); },true);
 		}
 		
-		public void AddCustomFunction(string name, int paramCount, System.Func<double[],double> func, bool isRandom = false)
+		public void AddCustomFunction(string name, int paramCount, System.Func<double[],double> func, bool enableSymbolicationTimeEvaluation = false)
 		{
 			if (paramCount>MaxCustomFunctionParamCount)
 			{
 				throw new ESTooManyParametersException("Custom functions can have no more than " + MaxCustomFunctionParamCount + " parameters");
 			}
-			customFuncs[name] = new CustomFunction(name, paramCount, func, isRandom);
+			customFuncs[name] = new CustomFunction(name, paramCount, func, enableSymbolicationTimeEvaluation);
 		}
 
-		public void AddCustomFunction(string name, int paramCount, System.Func<object[],double> func)
+		public void AddCustomFunction(string name, int paramCount, System.Func<object[],double> func, bool enableSymbolicationTimeEvaluation = false)
 		{
 			if (paramCount>MaxCustomFunctionParamCount)
 			{
 				throw new ESTooManyParametersException("Custom functions can have no more than " + MaxCustomFunctionParamCount + " parameters");
 			}
-			customFuncs[name] = new CustomFunction(name, paramCount, func, true);
+			customFuncs[name] = new CustomFunction(name, paramCount, func, enableSymbolicationTimeEvaluation);
 		}
 
-		public void AddCustomFunction(string name, System.Func<double,double> func, bool isRandom = false)
+		public void AddCustomFunction(string name, System.Func<double,double> func, bool enableSymbolicationTimeEvaluation = false)
 		{
-			customFuncs[name] = new CustomFunction(name, func, isRandom);
+			customFuncs[name] = new CustomFunction(name, func, enableSymbolicationTimeEvaluation);
 		}
 
 		public void RemoveCustomFunction(string name)
@@ -118,6 +118,10 @@ namespace AK
 			Variable variable;
 			if (globalConstants.TryGetValue(name, out variable))
 			{
+				if (variable.stringValue != null)
+				{
+					throw new ESParameterTypeChangedException("Can not change type of existing parameter " + name);
+				}
 				variable.value = value;
 				return variable;
 			}
@@ -128,6 +132,30 @@ namespace AK
 				return v;
 			}
 		}
+
+		public Variable SetGlobalVariable(string name, string value)
+		{
+			if (value == null)
+			{
+				throw new System.ArgumentException("Null is not acceptable string parameter value.");
+			}
+			Variable variable;
+			if (globalConstants.TryGetValue(name, out variable))
+			{
+				if (variable.stringValue == null)
+				{
+					throw new ESParameterTypeChangedException("Can not change type of existing parameter " + name);
+				}
+				variable.stringValue = value;
+				return variable;
+			}
+			else
+			{
+				Variable v = new Variable(name,value);
+				globalConstants.Add (name,v);
+				return v;
+			}
+		} 
 
 		public bool RemoveGlobalVariable(string name)
 		{
@@ -155,7 +183,14 @@ namespace AK
 			{
 				foreach (var localVariableName in localVariables)
 				{
-					newExpression.SetVariable(localVariableName.Trim(),0.0);
+					if (localVariableName[0] == '$')
+					{
+						newExpression.SetVariable(localVariableName.Substring(1,localVariableName.Length-1).Trim(),"");
+					}
+					else
+					{
+						newExpression.SetVariable(localVariableName.Trim(),0.0);
+					}
 				}
 			}
 
@@ -191,19 +226,19 @@ namespace AK
 				var s = symbolList[i];
 				switch (s.type)
 				{
-					case SymbolType.Value:
+					case SymbolType.RealValue:
 					case SymbolType.SubExpression:
-					case SymbolType.String:
+					case SymbolType.StringLiteral:
+					case SymbolType.StringVariable:
 					{
-						double value = s.type != SymbolType.String ? GetSymbolValue(s) : 0;
+						double value;
 						if (transformNextValue) 
 						{
 							var funcSymbol = symbolList[i-1];
 							switch (funcSymbol.type) {
 								case SymbolType.Pow:
 								{
-									var rhs = GetSymbolValue(symbolList[i+1]);
-									value = System.Math.Pow(value,rhs);
+									value = System.Math.Pow(GetSymbolValue(s),GetSymbolValue(symbolList[i+1]));
 									i++;
 									break;
 								}
@@ -212,15 +247,15 @@ namespace AK
 									var customFunc = (CustomFunction)funcSymbol.ptr;
 									if (customFunc.paramCount == 1 && customFunc.func1d != null)
 									{
-										value = customFunc.Invoke(value);
+										value = customFunc.Invoke(GetSymbolValue(s));
 									}
 									else if (customFunc.funcmo != null)
 									{
 										object[] p = new object[MaxCustomFunctionParamCount];
-										p[0] = s.type != SymbolType.String ? (object)GetSymbolValue(s) : (object)s.stringValue;
+										p[0] = (!s.IsStringType()) ? (object)GetSymbolValue(s) : (object)s.stringValue;
 										for (int g=1;g<customFunc.paramCount;g++)
 										{
-											p[g] = symbolList[i+1].type != SymbolType.String ? (object)GetSymbolValue(symbolList[i+1]) : (object)symbolList[i+1].stringValue;
+											p[g] = (!symbolList[i+1].IsStringType()) ? (object)GetSymbolValue(symbolList[i+1]) : (object)symbolList[i+1].stringValue;
 											i++;
 										}
 										value = customFunc.Invoke(p);
@@ -228,7 +263,7 @@ namespace AK
 									else
 									{
 										double[] p = new double[MaxCustomFunctionParamCount];
-										p[0] = value;
+										p[0] = GetSymbolValue(s);
 										for (int g=1;g<customFunc.paramCount;g++)
 										{
 											p[g] = GetSymbolValue(symbolList[i+1]);
@@ -239,9 +274,14 @@ namespace AK
 									break;
 								}
 								default:
-									break;
+									throw new System.Exception("Very unexpected parse error.");
 							}
 							transformNextValue = false;
+						}
+						else
+						{
+							// The value cant be a string because they appear only as parameters to functions
+							value = GetSymbolValue(s);
 						}
 						
 						switch (prevOper)
@@ -280,7 +320,7 @@ namespace AK
 
 		public static double GetSymbolValue(Symbol s) 
 		{
-			return (s.type == SymbolType.Value) ? (s.ptr == null ? s.value : ((Variable)s.ptr).value ) : ParseSymbols((SymbolList)s.ptr);
+			return (s.type == SymbolType.RealValue) ? (s.ptr == null ? s.value : ((Variable)s.ptr).value ) : ParseSymbols((SymbolList)s.ptr);
 		}
 
 		Symbol SymbolicateValue(string formula, int begin, int end, Expression exp)
@@ -310,13 +350,13 @@ namespace AK
 					Symbol lhs = Symbolicate(formula,begin,k,exp);
 					Symbol rhs = Symbolicate(formula,k+1,end,exp);
 					var newSubExpression = new SymbolList();
-					if (end-k-1 == 1 && lhs.type == SymbolType.Value && formula.Substring(k+1,end-k-1)=="2") 
+					if (end-k-1 == 1 && lhs.type == SymbolType.RealValue && formula.Substring(k+1,end-k-1)=="2") 
 					{
 						// Second power found
 						newSubExpression.Append(lhs);
 						newSubExpression.Append(lhs);
 					}
-					else if (end-k-1 == 1 && lhs.type == SymbolType.Value && formula.Substring(k+1,end-k-1)=="3")
+					else if (end-k-1 == 1 && lhs.type == SymbolType.RealValue && formula.Substring(k+1,end-k-1)=="3")
 					{
 						// Second power found
 						newSubExpression.Append(lhs);
@@ -458,7 +498,7 @@ namespace AK
 					// Unless we are dealing with a monome, symbolicate the term
 					Symbol newSymbol = SymbolicateValue(formula, formula[currentTermBegin] == '-' ? currentTermBegin + 1 : currentTermBegin, i,exp);
 					// Check if we can simplify the generated symbol
-					if (newSymbol.IsImmutableConstant()) 
+					if (newSymbol.IsImmutableConstant() && newSymbol.IsRealValueType()) 
 					{
 						// Constants are multiplied/divided together
 						if (divideNext)
@@ -507,7 +547,7 @@ namespace AK
 				{
 					// Add inside the last subexpression
 					SymbolList leftSideExpression = symbols.last.subExpression;
-					if (leftSideExpression.last.type==SymbolType.Value && leftSideExpression.last.IsImmutableConstant())
+					if (leftSideExpression.last.type==SymbolType.RealValue && leftSideExpression.last.IsImmutableConstant())
 					{
 						leftSideExpression.SetSymbolAtIndex(leftSideExpression.Length-1,new Symbol(leftSideExpression.last.value*constMultiplier));
 					}
@@ -529,9 +569,9 @@ namespace AK
 			}
 
 			// Check if the final monome is just a real number, in which case we don't have to return a subexpression type
-			if (symbols.Length == 1 && symbols.first.IsImmutableConstant())
+			if (symbols.Length == 1 && symbols.first.IsImmutableConstant() && symbols.first.IsRealValueType())
 			{
-				return symbols.first.type == SymbolType.Value ? symbols.first : new Symbol(GetSymbolValue(symbols.first));
+				return symbols.first.type == SymbolType.RealValue ? symbols.first : new Symbol(GetSymbolValue(symbols.first));
 			}
 			Symbol s = new Symbol(SymbolType.SubExpression);
 			s.subExpression = symbols;
@@ -578,7 +618,7 @@ namespace AK
 			}
 			
 			// If at this point we only have one real number left, just return it as a simple value.
-			if (symbols.Length == 1 && symbols.first.type == SymbolType.Value) 
+			if (symbols.Length == 1 && symbols.first.type == SymbolType.RealValue) 
 			{
 				return symbols.first;
 			}
@@ -591,7 +631,7 @@ namespace AK
 			for (int j = 0; j < symbols.Length; j++)
 			{
 				Symbol s = symbols.getSymbol(j);
-				if (s.IsImmutableConstant()) {
+				if (s.IsImmutableConstant() && s.IsRealValueType()) {
 					constantSum += s.value;
 					addedConstants = true;
 					if (j == symbols.Length - 1)
@@ -612,7 +652,7 @@ namespace AK
 			}
 			if (addedConstants) 
 			{
-				if (symbols.Length > 0 && symbols.getSymbol(symbols.Length - 1).IsValueType()) 
+				if (symbols.Length > 0 && symbols.getSymbol(symbols.Length - 1).IsRealValueType()) 
 				{
 					symbols.Append(new Symbol(SymbolType.OperatorAdd));
 				}
@@ -620,7 +660,7 @@ namespace AK
 			}
 
 			// Finally, if the symbolicated sum is just a single real number, even varying, return just a simple symbol
-			if (symbols.Length == 1 && symbols.getSymbol(0).type == SymbolType.Value)
+			if (symbols.Length == 1 && symbols.getSymbol(0).type == SymbolType.RealValue)
 			{
 				Symbol s = symbols.getSymbol(0);
 				return s;

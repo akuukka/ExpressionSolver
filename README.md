@@ -90,15 +90,15 @@ On my laptop, the latter loop was around 25% faster than the former.
 Custom functions that take up to 4 parameters are also supported. If the function takes only one parameter, this is how you define
 the function:
 
-    solver.AddCustomFunction("inverse",delegate(double p) { return 1.0/p; });
+    solver.AddCustomFunction("inverse",delegate(double p) { return 1.0/p; },true);
 
 Functions with multiple parameters take their input as an array of doubles. Remember to give also the number of parameters your function
 expects:
 
-    solver.AddCustomFunction("average", 2, delegate(double[] p) { return 0.5*(p[0]+p[1]); });
+    solver.AddCustomFunction("average", 2, delegate(double[] p) { return 0.5*(p[0]+p[1]); },true);
 
-If you pass a constant value to a custom function, then the function is evaluated at symbolication time. Therefore, the following loop
-runs very fast:
+The last parameter (true in above examples) specifies whether the function always produces same output given same input. When such
+functions have constant parameters, they can be evaluated at symbolication time. Therefore, the following loop runs very fast:
 
     var exp = solver.SymbolicateExpression("sin(cos(tan(312^3)))");
     for (int i=0;i<10000;i++)
@@ -109,14 +109,14 @@ this optimization should not be used with the function:
 
     solver.AddCustomFunction("Rnd",2, delegate(double[] p) {
 			return UnityEngine.Random.Range((float)p[0],(float)p[1]);
-		},true);
+		},false);
     // Now we get different value on each iteration
     var exp = solver.SymbolicateExpression("Rnd(0,1)");
     for (int i=0;i<10000;i++)
         exp.Evaluate();
 
-Since the last parameter passed to AddCustomFunction (isRandom) was true, the custom Rnd function was not evaluated at symbolication time
-and we got the desired results.
+Since the last parameter passed to AddCustomFunction was false, the custom Rnd function was not evaluated at symbolication time
+and we got the desired results. False is also the default parameter here.
 
 The following functions are supported by default:
 
@@ -141,12 +141,9 @@ Custom functions can also accept string parameters. Parameters to these function
     ExpressionSolver solver = new ExpressionSolver();
     solver.AddCustomFunction("strlen",1, delegate(object[] p) {
 		return ((string)p[0]).Length;
-	});
+	},true);
     var exp1 = solver.SymbolicatExpression("strlen('1234')");
     double len = exp1.Evaluate(); // Returns 4.0
-
-String functions are never evaluated at symbolication time. Therefore, therefore you don't to specify whether the function returns random
-values or not.
 
 Escape character inside the string literal is backslash. To insert that inside a C# string literal, you of course need to enter it twice:
 
@@ -179,7 +176,6 @@ Strings can only appear as parameters to string accepting functions and string c
 
     solver.EvaluateExpression("'abba'"); // Error: strings can not appear as independent values
     solver.EvaluateExpression("strlen('ab'+'ba'"); // Error: no string concatenation
-
 
 
 Have fun with ExpressionSolver!

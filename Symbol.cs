@@ -6,13 +6,14 @@ namespace AK
 	public enum SymbolType
 	{
 		Empty,
-		Value,
+		RealValue,
 		OperatorAdd,
 		OperatorMultiply,
 		OperatorDivide,
 		SubExpression,
 		Pow,
-		String,
+		StringLiteral,
+		StringVariable,
 		FuncCustom,
 	};
 	
@@ -37,7 +38,7 @@ namespace AK
 		public string stringValue 
 		{ 
 			get { 
-				return (string)ptr;
+				return type == SymbolType.StringLiteral ? (string)ptr : ((Variable)ptr).stringValue;
 			}
 			
 			set
@@ -75,10 +76,14 @@ namespace AK
 		// Test if value of the symbol is independent of variables.
 		public bool IsImmutableConstant()
 		{
-			if (type == SymbolType.Value)
+			if (type == SymbolType.RealValue)
 			{
 				if (variable != null)
 					return false;
+				return true;
+			}
+			else if (type == SymbolType.StringLiteral)
+			{
 				return true;
 			}
 			else if (type == SymbolType.SubExpression)
@@ -91,9 +96,10 @@ namespace AK
 			}
 		}
 
-		public bool IsMonome() {
+		public bool IsMonome()
+		{
 			var s = this;
-			if (s.type==SymbolType.Value)
+			if (s.type==SymbolType.RealValue)
 			{
 				return true;
 			}
@@ -103,7 +109,7 @@ namespace AK
 				for (int i=0;i<syms.Length;i++)
 				{
 					var r = syms.getSymbol(i);
-					if (r.type!=SymbolType.Value && r.type!=SymbolType.SubExpression)
+					if (r.type!=SymbolType.RealValue && r.type!=SymbolType.SubExpression)
 					{
 						return false;
 					}
@@ -117,19 +123,19 @@ namespace AK
 			// ((x)) ==> (x)
 			if (type == SymbolType.SubExpression)
 			{
-				if (subExpression.Length == 1 && subExpression.first.type == SymbolType.SubExpression)
+				if (subExpression.Length != 1)
+				{
+					return;
+				}
+				if (subExpression.first.type == SymbolType.SubExpression)
 				{
 					// Get pointer to sub-subexpression
 					SymbolList subSubExpression = subExpression.symbols[0].subExpression;
 					subExpression = subSubExpression;
 				}
-				else if (subExpression.Length == 1 && subExpression.first.type == SymbolType.Value)
+				else if (subExpression.first.type == SymbolType.RealValue || subExpression.first.type == SymbolType.StringLiteral || subExpression.first.type == SymbolType.StringVariable)
 				{
 					// We have single real number surrounded by parenthesis, it can become a real number
-					CopyValuesFrom(subExpression.first);
-				}
-				else if (subExpression.Length == 1 && subExpression.first.type == SymbolType.String)
-				{
 					CopyValuesFrom(subExpression.first);
 				}
 			}
@@ -137,25 +143,26 @@ namespace AK
 		
 		private bool IsSymbolListImmutableConstant(SymbolList l)
 		{
-			for (int k = 0; k < l.Length; k++)
+			var len = l.Length;
+			for (int k = 0; k < len; k++)
 			{
 				var s = l.getSymbol(k);
-				if (s.type == SymbolType.Value)
+				if (s.type == SymbolType.RealValue)
 				{
 					if (s.variable != null)
 					{
 						return false;
 					}
 				}
-				else if (l.getSymbol(k).type == SymbolType.FuncCustom && l.getSymbol(k).customFunc.isRandom)
+				else if (s.type == SymbolType.FuncCustom && !s.customFunc.enableSymbolicationTimeEvaluation)
 				{
 					return false;
 				}
-				else if (l.getSymbol(k).type == SymbolType.String)
+				else if (s.type == SymbolType.StringVariable)
 				{
 					return false;
 				}
-				else if (l.getSymbol(k).type == SymbolType.SubExpression)
+				else if (s.type == SymbolType.SubExpression)
 				{
 					if (!IsSymbolListImmutableConstant(s.subExpression))
 					{
@@ -181,8 +188,14 @@ namespace AK
 			}
 		}
 		
-		public bool IsValueType() {
-			return type == SymbolType.Value || type == SymbolType.SubExpression;
+		public bool IsRealValueType()
+		{
+			return type == SymbolType.RealValue || type == SymbolType.SubExpression;
+		}
+
+		public bool IsStringType()
+		{
+			return type == SymbolType.StringLiteral || type == SymbolType.StringVariable;
 		}
 		
 		public Symbol(SymbolType type, double va)
@@ -192,7 +205,8 @@ namespace AK
 			variable = null;
 		}
 		
-		public Symbol(SymbolType type) {
+		public Symbol(SymbolType type)
+		{
 			this.type = type;
 		}
 
@@ -204,19 +218,19 @@ namespace AK
 		
 		public Symbol(double value)
 		{
-			type = SymbolType.Value;
+			type = SymbolType.RealValue;
 			_value = value;
 		}
 
 		public Symbol(string stringValue)
 		{
-			type = SymbolType.String;
+			type = SymbolType.StringLiteral;
 			ptr = stringValue;
 		}
 		
 		public Symbol(Variable ptrToConstValue)
 		{
-			type = SymbolType.Value;
+			type = ptrToConstValue.stringValue != null ? SymbolType.StringVariable : SymbolType.RealValue;
 			variable = ptrToConstValue;
 		}
 		
@@ -230,7 +244,8 @@ namespace AK
 		{
 			switch (type) 
 			{
-				case SymbolType.Value:
+				case SymbolType.RealValue:
+				case SymbolType.StringVariable:
 					if (variable != null)
 					{
 						return variable.name;
@@ -238,7 +253,7 @@ namespace AK
 					return _value.ToString();
 				case SymbolType.OperatorAdd:
 					return "+";
-				case SymbolType.String:
+				case SymbolType.StringLiteral:
 					return "\'" + stringValue + "\'";
 				case SymbolType.OperatorMultiply:
 					return "*";
