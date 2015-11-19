@@ -534,7 +534,7 @@ namespace AK
 					sign++;
 				}
 			}
-			
+
 			// If the generated monome has negative number of minus signs, then we append *-1 to end of the list, or if the preceding symbol is constant real number that is part of a monome, we multiply it.
 			if (sign % 2 == 1)
 			{
@@ -543,7 +543,12 @@ namespace AK
 			if (constMultiplierUsed || sign % 2 == 1)
 			{
 				// Add the const multiplier to the expression
-				if (symbols.Length > 0 && symbols.last.type == SymbolType.SubExpression && symbols.last.IsMonome())
+				if (symbols.Length>0 && symbols.first.type==SymbolType.OperatorDivide)
+				{
+					// Put to the begin of the expression we are building
+					symbols.symbols.Insert(0,new Symbol(constMultiplier));
+				}
+				else if (symbols.Length > 0 && symbols.last.type == SymbolType.SubExpression && symbols.last.IsMonome())
 				{
 					// Add inside the last subexpression
 					SymbolList leftSideExpression = symbols.last.subExpression;
@@ -555,11 +560,6 @@ namespace AK
 					{
 						leftSideExpression.Append(new Symbol(constMultiplier));
 					}
-				}
-				else if (symbols.Length>0 && symbols.first.type==SymbolType.OperatorDivide)
-				{
-					// Put to the begin of the expression we are building
-					symbols.symbols.Insert(0,new Symbol(constMultiplier));
 				}
 				else
 				{

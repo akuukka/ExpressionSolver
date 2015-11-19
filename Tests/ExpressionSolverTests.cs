@@ -31,8 +31,38 @@ namespace AK
 			}
 		}
 
+		public static void TestComplexFormulas()
+		{
+			ExpressionSolver solver = new ExpressionSolver();
+			{
+				var exp = solver.SymbolicateExpression("sin(1/(0.5*x))","x");
+				var x = 21.0;
+				exp.SetVariable("x",x);
+				AssertSameValue(exp.Evaluate(),System.Math.Sin(1/(0.5*x)) );
+			}
+			{
+				var exp = solver.SymbolicateExpression("sin(2/(1-0.5*x))","x");
+				var x = 21.0;
+				exp.SetVariable("x",x);
+				AssertSameValue(exp.Evaluate(),System.Math.Sin(2/(1-0.5*x)) );
+			}
+			{
+				var exp = solver.SymbolicateExpression("sin((2/(1-0.5*x))/2)","x");
+				var x = 21.0;
+				exp.SetVariable("x",x);
+				AssertSameValue(exp.Evaluate(),System.Math.Sin((2/(1-0.5*x))/2));
+			}
+			{
+				var exp = solver.SymbolicateExpression("1/(1+sin((2/(1-0.5*x))/2))","x");
+				var x = 21.0;
+				exp.SetVariable("x",x);
+				AssertSameValue(exp.Evaluate(),1/(1+System.Math.Sin((2/(1-0.5*x))/2)));
+			}
+		}
+
 		public static void Run()
 		{
+			TestComplexFormulas();
 			TestStringFuncs();
 			TestGlobalConstants();
 			TestExpLocalConstants();
