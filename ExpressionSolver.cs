@@ -35,7 +35,7 @@ namespace AK
 
 	public class ExpressionSolver
 	{
-		private static readonly int MaxCustomFunctionParamCount = 4;
+		private static readonly int MaxCustomFunctionParamCount = 8;
 
 		public enum UndefinedVariablePolicy
 		{

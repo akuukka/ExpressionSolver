@@ -88,7 +88,7 @@ get reference to the variable. With the reference, you can change the value with
 On my laptop, the latter loop was around 25% faster than the former.
 
 
-Custom functions that take up to 4 parameters are also supported. If the function takes only one parameter, this is how you define
+Custom functions that take up to 8 parameters are also supported. If the function takes only one parameter, this is how you define
 the function:
 
     solver.AddCustomFunction("inverse",delegate(double p) { return 1.0/p; },true);
