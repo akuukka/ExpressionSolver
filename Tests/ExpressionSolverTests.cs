@@ -58,6 +58,12 @@ namespace AK
 				exp.SetVariable("x",x);
 				AssertSameValue(exp.Evaluate(),1/(1+System.Math.Sin((2/(1-0.5*x))/2)));
 			}
+			{
+				var exp = solver.SymbolicateExpression(" (1-(3*(x/( (x+22)/x)-1*2*x))^0.5)/(x+1) ","x");
+				var x = -21.0;
+				exp.SetVariable("x",x);
+				AssertSameValue(exp.Evaluate(), (1-System.Math.Pow(3*(x/( (x+22)/x)-1*2*x),0.5))/(x+1) );
+			}
 		}
 
 		public static void Run()
@@ -195,6 +201,13 @@ namespace AK
 			AssertSameValue(exp7.Evaluate(),exp7.Evaluate());
 			var exp8 = solver.SymbolicateExpression("cos(0)+1*2");
 			AssertSameValue(exp8.Evaluate(),3);
+			solver.AddCustomFunction("dist",4, delegate(double[] p) {
+				return System.Math.Pow( (p[2]-p[0])*(p[2]-p[0]) + (p[3]-p[1])*(p[3]-p[1])    ,0.5);
+			},true);
+			var exp9 = solver.SymbolicateExpression("dist(3*x,(4*x),+6*x,-1*x)","x");
+			double x = 21;
+			exp9.SetVariable("x",x);
+			AssertSameValue(exp9.Evaluate(),System.Math.Sqrt( (3*x-6*x)*(3*x-6*x)+(4*x+x)*(4*x+x)  ));
 		}
 
 		public static void TestSum()
