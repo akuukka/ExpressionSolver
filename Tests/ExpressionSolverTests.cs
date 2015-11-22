@@ -115,9 +115,9 @@ namespace AK
 			}
 
 			// Because strlen should be evaluated at symbolication time, the following should reduce to one real value symbol:
-			exp = solver.SymbolicateExpression("strlen('123')+1");
+			exp = solver.SymbolicateExpression("(1+strlen('123')+1)/strlen('12345')");
 			Assert(exp.root.type == SymbolType.RealValue);
-			AssertSameValue(exp.root.value,4);
+			AssertSameValue(exp.root.value,1);
 			// But if one of the parameters is not constant, then we cant do it:
 			exp = solver.SymbolicateExpression("strlen('123')+x", new string[]{"x"});
 			Assert(exp.root.type == SymbolType.SubExpression);

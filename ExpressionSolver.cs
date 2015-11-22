@@ -406,13 +406,10 @@ namespace AK
 					int foundParameterCount = SolverTools.CountParameters(formula,begin,end);
 					if (requiredParameterCount == foundParameterCount) {
 						if (requiredParameterCount == 1) {
-							Symbol argument = Symbolicate(formula,i+1,end-1,exp);
 							SymbolList newSubExpression = new SymbolList();
 							newSubExpression.Append(new Symbol(customFunc));
-							newSubExpression.Append(argument);
-							Symbol newSymbol = new Symbol(SymbolType.SubExpression);
-							newSymbol.subExpression = newSubExpression;
-							return newSymbol;
+							newSubExpression.Append(Symbolicate(formula,i+1,end-1,exp));
+							return new Symbol(newSubExpression);
 						}
 						else {
 							List<SolverTools.IntPair> parameters = SolverTools.ParseParameters(formula,i,end);
@@ -625,7 +622,7 @@ namespace AK
 			
 			// We don't have that single expression, but:
 			// Now that we are here, we have symbol list which consists of only addition operators and value types. This is a great place to sum constant values together!
-			double constantSum = 0.0f;
+			double constantSum = 0;
 			bool addedConstants = false;
 
 			for (int j = 0; j < symbols.Length; j++)
