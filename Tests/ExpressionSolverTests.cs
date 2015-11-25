@@ -64,6 +64,12 @@ namespace AK
 				exp.SetVariable("x",x);
 				AssertSameValue(exp.Evaluate(), (1-System.Math.Pow(3*(x/( (x+22)/x)-1*2*x),0.5))/(x+1) );
 			}
+			{
+				var exp = solver.SymbolicateExpression("(1+1/x)^x","x");
+				var x = 30000000.0;
+				exp.SetVariable("x",x);
+				AssertSameValue(exp.Evaluate(),System.Math.E);
+			}
 		}
 
 		public static void Run()
