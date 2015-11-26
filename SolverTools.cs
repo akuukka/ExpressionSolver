@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 
 namespace AK {
 
@@ -23,14 +24,14 @@ namespace AK {
 
 		public static string RemoveWhiteSpace(string formula)
 		{
-			string r = "";
+			StringBuilder sb = new StringBuilder();
 			int l = formula.Length;
 			for (int i=0;i<l;i++)
 			{
 				char c = formula[i];
 				if (c=='\'')
 				{
-					r += c;
+					sb.Append(c);
 					for (int j=i+1;j<l;j++) 
 					{
 						char d = formula[j];
@@ -40,15 +41,15 @@ namespace AK {
 							break;
 						}
 						i++;
-						r += d;
+						sb.Append(d);
 					}
 				}
 				if (!IsWhiteSpaceChar(c))
 				{
-					r += c;
+					sb.Append(c);
 				}
 			}
-			return r;
+			return sb.ToString();
 		}
 		
 		public static List<IntPair> ParseParameters(string formula, int begin, int end) 
