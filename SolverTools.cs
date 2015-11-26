@@ -24,8 +24,8 @@ namespace AK {
 
 		public static string RemoveWhiteSpace(string formula)
 		{
-			StringBuilder sb = new StringBuilder();
 			int l = formula.Length;
+			StringBuilder sb = new StringBuilder(l);
 			for (int i=0;i<l;i++)
 			{
 				char c = formula[i];
