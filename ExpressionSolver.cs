@@ -197,7 +197,8 @@ namespace AK
 			formula = SolverTools.RemoveWhiteSpace(formula);
 
 			// Check validity
-			try {
+			try
+			{
 				ValidityChecker.CheckValidity(formula);
 			}
 			catch (System.Exception ex)
@@ -235,7 +236,8 @@ namespace AK
 						if (transformNextValue) 
 						{
 							var funcSymbol = symbolList[i-1];
-							switch (funcSymbol.type) {
+							switch (funcSymbol.type) 
+							{
 								case SymbolType.Pow:
 								{
 									value = System.Math.Pow(GetSymbolValue(s),GetSymbolValue(symbolList[i+1]));

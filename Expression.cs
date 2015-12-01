@@ -42,6 +42,11 @@ namespace AK
 			return v;
 		}
 
+		/// <summary>
+		/// Get reference to a variable that has been set up already.
+		/// </summary>
+		/// <returns>The variable or null if variable is not found.</returns>
+		/// <param name="name">Name of the variable.</param>
 		public Variable GetVariable(string name)
 		{
 			return constants[name];
