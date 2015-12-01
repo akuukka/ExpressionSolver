@@ -1,18 +1,16 @@
 # ExpressionSolver
-A C# mathematical expression solver with Unity3D compatibility
+A C# mathematical expression solver with Unity3D compatibility. Supports custom functions (that may also accept string parameters) and named constants.
 
 Usage:
 
     AK.ExpressionSolver solver = new AK.ExpressionSolver();
     var exp = solver.SymbolicateExpression("1+1");
-    var result = exp.Evaluate(); // Returns 2.0
+    double result = exp.Evaluate(); // Returns 2.0
     solver.EvaluateExpression("1+1"); // Also returns 2.0
 
-Expression is symbolicated only once: subsequent calls to Evaluate are fast. If you are going to evaluate the expression only once,
-you can do without Expression objects and just call solver.EvaluateExpression(string formula) like we did in the example above.
+Expression is symbolicated only once: subsequent calls to Evaluate are fast. If you are going to evaluate the expression only once, you can do without Expression objects and just call solver.EvaluateExpression(string formula) like we did in the example above.
 
-There are two kinds of variables: global and expression-local. Global variables
-are shared between all Expressions created using the same parser object:
+There are two kinds of variables: global and expression-local. Global variables are shared between all Expressions created using the same parser object:
 
     ExpressionSolver solver = new ExpressionSolver();
     solver.SetGlobalVariable("test",1);
