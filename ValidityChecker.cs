@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace AK {
 
@@ -66,6 +67,44 @@ namespace AK {
 				return true;
 			if (c >= '_')
 				return true;
+			if (c >= '.')
+				return true;
+			return false;
+		}
+
+		public static string CheckNamesAndConstants(string s)
+		{
+			var rege = @"(?>[_.a-zA-Z0-9]+)"; // ?> forces the regex engine to not backtrack, ?!\( ensures that the word does not end with ( which would make it a function name
+			var matches = Regex.Matches(s,rege);
+			if (matches.Count>0)
+			{
+				for (int i=0;i<matches.Count;i++)
+				{
+					var m = matches[i].Value;
+					if (!IsValidNameOrConstant(m))
+					{
+						return m;
+					}
+				}
+			}
+			return null;
+		}
+
+		public static bool IsValidNameOrConstant(string s)
+		{
+			string[] mustMatchWith = {
+				@"^[a-zA-Z_][a-zA-Z_0-9]*$" /* a constant, function name - can not start with a number */,
+				@"^[0-9]*$",
+				@"^[0-9]+.[0-9]*$",
+				@"^[0-9]*.[0-9]+$",
+			};			
+			for (int j=0;j<mustMatchWith.Length;j++)
+			{
+				if (Regex.IsMatch(s,mustMatchWith[j]))
+				{
+					return true;
+				}
+			}
 			return false;
 		}
 
@@ -171,6 +210,11 @@ namespace AK {
 			}
 			if (inStringParam) {
 				throw new ESSyntaxErrorException("String parameter not ending.");
+			}
+			var error = CheckNamesAndConstants(expression);
+			if (error != null)
+			{
+				throw new ESInvalidNameException(error);
 			}
 		}
 

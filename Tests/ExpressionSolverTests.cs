@@ -41,6 +41,10 @@ namespace AK
 				AssertSameValue(exp.Evaluate(),System.Math.Sin(1/(0.5*x)) );
 			}
 			{
+				var exp = solver.SymbolicateExpression("(1+1)+.5");
+				AssertSameValue(exp.Evaluate(),2.5f);
+			}
+			{
 				var exp = solver.SymbolicateExpression("sin(2/(1-0.5*x))","x");
 				var x = 21.0;
 				exp.SetVariable("x",x);
@@ -74,6 +78,7 @@ namespace AK
 
 		public static void Run()
 		{
+			TestNames();
 			TestComplexFormulas();
 			TestStringFuncs();
 			TestGlobalConstants();
@@ -82,6 +87,29 @@ namespace AK
 			TestSum();
 			TestFuncs();
 			TestWhiteSpaceRemoval();
+		}
+
+		private static void TestNames()
+		{
+			ExpressionSolver solver = new ExpressionSolver();
+			try
+			{
+				solver.EvaluateExpression("0hakka");
+				throw new System.Exception("Test failed");
+			}
+			catch (ESInvalidNameException)
+			{
+				// As expected
+			}
+			try
+			{
+				solver.EvaluateExpression("0.0.0");
+				throw new System.Exception("Test failed");
+			}
+			catch (ESInvalidNameException)
+			{
+				// As expected
+			}
 		}
 
 		public static void TestStringFuncs()
